@@ -1,0 +1,1667 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>WordVault · 英文學習</title>
+  <style>
+    :root {
+      --bg: #f0eeec;
+      --surface: #f7f6f4;
+      --ink: #2c2c2e;
+      --ink2: #6e6e73;
+      --gold: #9e8256;
+      --gold-light: #e2d9c8;
+      --green: #4a7860;
+      --red: #9a5050;
+      --blue: #4f6f87;
+      --border: #d8d4cf;
+      --radius: 14px;
+      --shadow: 0 2px 16px rgba(0,0,0,0.06);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang TC", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* ── HEADER ── */
+    .app-header {
+      background: var(--ink);
+      color: white;
+      padding: 18px 20px 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+    }
+
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .app-title {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      font-size: 20px;
+      font-weight: 600;
+      color: var(--gold-light);
+      letter-spacing: 0.3px;
+    }
+
+    .word-count-badge {
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+      margin-top: 3px;
+    }
+
+    .nav {
+      display: flex;
+      margin-top: 14px;
+    }
+
+    .nav-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: rgba(255,255,255,0.45);
+      padding: 10px 4px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .nav-btn.active {
+      color: var(--gold-light);
+      border-bottom-color: var(--gold);
+    }
+
+    /* ── SCREENS ── */
+    .screen { display: none; padding: 18px; animation: fadeIn 0.22s ease; }
+    .screen.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink2);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 14px;
+    }
+
+    /* ── FORM ELEMENTS ── */
+    textarea, input[type="text"], input[type="number"], input[type="password"], select {
+      width: 100%;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.2s;
+      appearance: none;
+    }
+
+    textarea:focus, input:focus, select:focus { border-color: var(--gold); }
+
+    textarea {
+      resize: vertical;
+      min-height: 130px;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    label {
+      font-size: 12px;
+      color: var(--ink2);
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-primary { background: var(--ink); color: white; }
+    .btn-primary:hover:not(:disabled) { background: #2d2b50; }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-gold { background: var(--gold); color: white; }
+    .btn-gold:hover:not(:disabled) { background: #b07d14; }
+    .btn-gold:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-outline { background: transparent; color: var(--ink); border: 1.5px solid var(--border); }
+    .btn-outline:hover { border-color: var(--ink); background: rgba(0,0,0,0.03); }
+
+    .btn-danger { background: var(--red); color: white; }
+    .btn-danger:hover { background: #a93226; }
+
+    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
+
+    .btn-icon {
+      width: 34px; height: 34px;
+      padding: 0; border-radius: 50%;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 15px;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      cursor: pointer; transition: all 0.15s;
+    }
+    .btn-icon:hover { background: var(--gold-light); border-color: var(--gold); }
+
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+    /* ── STATUS ── */
+    .status-msg {
+      font-size: 13px;
+      padding: 8px 12px;
+      border-radius: 7px;
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+    .status-success { background: #e8efec; color: var(--green); border-left: 3px solid var(--green); }
+    .status-error   { background: #f0e8e8; color: var(--red);   border-left: 3px solid var(--red); }
+    .status-info    { background: #ede8df; color: #7a6a50;      border-left: 3px solid var(--gold); }
+
+    /* ── WORD CARDS ── */
+    .word-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 13px 15px;
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+    }
+
+    .word-card-main { flex: 1; min-width: 0; }
+
+    .word-en {
+      font-size: 17px;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: 0.2px;
+    }
+
+    .word-tag {
+      display: inline-block;
+      font-size: 10px;
+      background: var(--gold-light);
+      color: #6a4a00;
+      border-radius: 4px;
+      padding: 1px 7px;
+      margin-left: 7px;
+      font-weight: 600;
+      vertical-align: middle;
+    }
+
+    .word-zh {
+      font-size: 13px;
+      color: var(--ink2);
+      margin-top: 4px;
+      transition: filter 0.3s;
+    }
+    .word-zh.hidden { filter: blur(5px); user-select: none; }
+
+    .word-error { font-size: 11px; color: var(--red); margin-top: 3px; }
+
+    .word-resource {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      color: var(--blue);
+      background: #e4ecf2;
+      border-radius: 4px;
+      padding: 1px 7px;
+      margin-top: 4px;
+      max-width: 100%;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    /* ── QUIZ ── */
+    .quiz-timer {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      font-size: 42px;
+      color: var(--gold);
+      text-align: center;
+      letter-spacing: 2px;
+    }
+    .quiz-timer.urgent { color: var(--red); animation: pulse 0.9s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.45; }
+    }
+
+    .quiz-progress-bar-wrap {
+      background: var(--border);
+      border-radius: 4px;
+      height: 4px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .quiz-progress-bar {
+      background: var(--gold);
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .quiz-progress { font-size: 12px; color: var(--ink2); text-align: center; margin-top: 6px; }
+
+    .quiz-question {
+      font-size: 17px;
+      font-weight: 700;
+      text-align: center;
+      color: var(--ink);
+      line-height: 1.5;
+      margin: 8px 0 4px;
+    }
+
+    .quiz-sub { font-size: 12px; color: var(--ink2); text-align: center; margin-bottom: 16px; }
+
+    .choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .choice-btn {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 10px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--ink);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+      line-height: 1.5;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .choice-btn:hover:not(:disabled) { border-color: var(--gold); background: #fffbf0; }
+    .choice-btn.correct { border-color: var(--green); background: #e8f0ec; color: var(--green); font-weight: 600; }
+    .choice-btn.wrong   { border-color: var(--red);   background: #f0e8e8; color: var(--red); }
+    .choice-btn:disabled { cursor: default; }
+
+    .quiz-feedback { margin-top: 12px; font-size: 13px; text-align: center; min-height: 20px; }
+
+    /* ── RESULTS ── */
+    .result-stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .result-stat:last-child { border-bottom: none; }
+    .val { font-weight: 700; font-size: 20px; }
+    .val.good { color: var(--green); }
+    .val.bad  { color: var(--red); }
+
+    .wrong-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      gap: 8px;
+    }
+    .wrong-item:last-child { border-bottom: none; }
+    .wrong-item .zh { color: var(--ink2); font-size: 12px; margin-top: 2px; }
+
+    /* ── LOADER ── */
+    .loader {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+      flex-shrink: 0;
+    }
+    .loader.dark { border-color: rgba(0,0,0,0.15); border-top-color: var(--ink); }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── MISC ── */
+    .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+    .settings-toggle {
+      font-size: 12px;
+      color: var(--ink2);
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      text-decoration: underline;
+      font-family: inherit;
+    }
+
+    #apikey-section { display: none; margin-top: 12px; }
+
+    .number-row { display: flex; align-items: center; gap: 10px; }
+    .number-row input { width: 90px; text-align: center; }
+
+    .empty-state {
+      text-align: center;
+      color: var(--ink2);
+      padding: 32px 0;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .tag-filter-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .tag-chip {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      color: var(--ink2);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tag-chip.active { background: var(--ink); color: white; border-color: var(--ink); }
+
+    .resource-chip {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1.5px solid #c2d4e0;
+      background: #edf3f7;
+      color: var(--blue);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-weight: 500;
+    }
+    .resource-chip.active { background: var(--blue); color: white; border-color: var(--blue); }
+
+    /* ── BANK ── */
+    .bank-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .bank-controls input { flex: 1; }
+
+    /* ── CONFIRM DIALOG ── */
+    .overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .overlay.show { display: flex; }
+    .dialog {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 24px;
+      width: 100%;
+      max-width: 340px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+    }
+    .dialog h3 { font-size: 16px; margin-bottom: 8px; }
+    .dialog p  { font-size: 13px; color: var(--ink2); margin-bottom: 18px; }
+    .dialog .btn-row { margin-top: 0; }
+
+    /* ── BACKUP REMINDER BANNER ── */
+    .reminder-banner {
+      display: none;
+      background: #f0ebe0;
+      border-bottom: 1px solid #d8ceb8;
+      padding: 10px 18px;
+      font-size: 13px;
+      color: #6a5a3a;
+      align-items: center;
+      gap: 10px;
+    }
+    .reminder-banner.show { display: flex; }
+    .reminder-banner span { flex: 1; line-height: 1.5; }
+    .reminder-dismiss {
+      background: none; border: none;
+      font-size: 18px; color: #9a8a6a;
+      cursor: pointer; padding: 0; line-height: 1;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-row">
+    <div>
+      <div class="app-title">📖 WordVault</div>
+      <div class="word-count-badge" id="global-count">載入中…</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showScreen('import', this)">📥 匯入</button>
+    <button class="nav-btn" onclick="showScreen('study', this)">📚 背誦</button>
+    <button class="nav-btn" onclick="showScreen('quiz', this)">🎯 考驗</button>
+    <button class="nav-btn" onclick="showScreen('bank', this)">🗂 單字庫</button>
+  </nav>
+</header>
+
+<!-- Backup reminder banner -->
+<div class="reminder-banner" id="reminder-banner">
+  <span id="reminder-msg">⏰ 備份提醒</span>
+  <button class="reminder-dismiss" onclick="dismissReminder()" title="關閉">×</button>
+</div>
+
+<main>
+
+  <!-- ══════════════ IMPORT ══════════════ -->
+  <section class="screen active" id="screen-import">
+
+    <div class="card">
+      <div class="section-title">匯入單字清單</div>
+
+      <!-- CSV file upload -->
+      <input type="file" id="csv-file-input" accept=".csv,.txt" style="display:none" onchange="handleCsvFile(this)" />
+      <button class="btn btn-outline" style="width:100%;margin-bottom:12px;" onclick="document.getElementById('csv-file-input').click()">
+        📂 上傳 CSV 檔案
+      </button>
+
+      <div style="font-size:11px;color:var(--ink2);margin-bottom:10px;line-height:1.8;">
+        <strong>支援兩種格式（自動判斷）：</strong><br>
+        ① CSV 含翻譯：<code>Word, Translation, Resource</code>（首行標題自動略過）<br>
+        ② 純單字清單：每行 <code>英文單字, 標籤, 來源</code>（標籤/來源可省略）
+      </div>
+
+      <textarea id="import-input" placeholder="— 貼上 CSV 或純文字清單 —&#10;&#10;critter, 小動物；生物, #sloth_philosophy&#10;moth, 蛾；出蛀蟲, #sloth_philosophy&#10;&#10;— 或純單字清單 —&#10;&#10;ephemeral, adj&#10;resilience, n"></textarea>
+      <label style="margin-top:10px;">📎 來源 Resource（選填，套用至本次全部匯入；CSV 第三欄可個別覆蓋）</label>
+      <input type="text" id="import-resource" placeholder="例：GRE 5000、Unit 3 課本、#sloth_philosophy…" />
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="importWords()">📥 匯入</button>
+        <button class="btn btn-outline" onclick="document.getElementById('import-input').value=''">清空輸入</button>
+      </div>
+      <div id="import-status"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">✨ AI 批次翻譯</div>
+      <p style="font-size:13px;color:var(--ink2);margin-bottom:14px;line-height:1.6;">
+        自動為所有<strong>尚未有中文解釋</strong>的單字，呼叫 Claude AI 批次填入翻譯。
+      </p>
+      <button class="btn btn-gold" onclick="batchTranslate()" id="translate-btn">✨ 開始 AI 翻譯</button>
+      <div id="translate-status"></div>
+
+      <div class="divider"></div>
+      <button class="settings-toggle" onclick="toggleApiKey()">⚙️ 設定 API Key（獨立執行時才需要）</button>
+      <div id="apikey-section">
+        <label style="margin-top:10px;">Anthropic API Key</label>
+        <input type="password" id="api-key-input" placeholder="sk-ant-…" />
+        <p style="font-size:11px;color:var(--ink2);margin-top:5px;">
+          ⚠️ Key 僅保存於記憶體，重新整理後需重新輸入。<br>
+          若在 Claude.ai 中使用，不需要填入 Key。
+        </p>
+      </div>
+    </div>
+
+    <!-- Backup card -->
+    <div class="card">
+      <div class="section-title">💾 備份與還原</div>
+
+      <p style="font-size:13px;color:var(--ink2);margin-bottom:14px;line-height:1.6;">
+        單字資料存在瀏覽器本地，建議定期匯出備份以防遺失。
+      </p>
+
+      <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px;">匯出</div>
+      <div class="btn-row" style="margin-top:0;">
+        <button class="btn btn-primary" onclick="exportJSON()">⬇ 匯出 JSON 備份</button>
+        <button class="btn btn-outline" onclick="exportCSV()">⬇ 匯出 CSV</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px;">還原</div>
+      <input type="file" id="restore-file-input" accept=".json,.csv" style="display:none" onchange="restoreBackup(this)" />
+      <button class="btn btn-outline" style="width:100%;" onclick="document.getElementById('restore-file-input').click()">
+        ⬆ 從備份檔案還原
+      </button>
+      <p style="font-size:11px;color:var(--ink2);margin-top:6px;">支援 JSON 備份檔，或含翻譯的 CSV（Word, Translation, Resource）。不會覆蓋已有單字，重複自動略過。</p>
+      <div id="restore-status"></div>
+
+      <div class="divider"></div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px;">⏰ 備份提醒</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <select id="reminder-interval" onchange="saveReminderSetting()" style="flex:1;">
+          <option value="0">不提醒</option>
+          <option value="30">每個月提醒</option>
+          <option value="90">每季提醒</option>
+        </select>
+        <span style="font-size:12px;color:var(--ink2);" id="last-backup-label">尚未備份</span>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ══════════════ STUDY ══════════════ -->
+  <section class="screen" id="screen-study">
+
+    <div class="card">
+      <div class="section-title">列表背誦設定</div>
+      <div class="number-row">
+        <input type="number" id="study-n" placeholder="數量 N" min="1" />
+        <button class="btn btn-primary" onclick="startStudy(false)">🎲 隨機抽 N</button>
+        <button class="btn btn-outline" onclick="startStudy(true)">全部</button>
+      </div>
+
+      <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:12px;">
+        <label style="margin:0;font-size:13px;display:flex;align-items:center;gap:5px;cursor:pointer;">
+          <input type="checkbox" id="show-zh-toggle" checked onchange="renderStudyList()">
+          顯示中文
+        </label>
+        <label style="margin:0;font-size:13px;display:flex;align-items:center;gap:5px;cursor:pointer;">
+          <input type="checkbox" id="sort-error-toggle">
+          優先顯示常錯
+        </label>
+        <label style="margin:0;font-size:13px;display:flex;align-items:center;gap:5px;cursor:pointer;">
+          <input type="checkbox" id="autoread-toggle">
+          自動朗讀
+        </label>
+      </div>
+
+      <div id="study-tag-filter" class="tag-filter-row" style="display:none;"></div>
+      <div id="study-resource-filter" class="tag-filter-row" style="display:none;"></div>
+    </div>
+
+    <div id="study-list"></div>
+  </section>
+
+  <!-- ══════════════ QUIZ ══════════════ -->
+  <section class="screen" id="screen-quiz">
+
+    <div id="quiz-setup">
+      <div class="card">
+        <div class="section-title">測驗設定</div>
+
+        <label>測驗時間（分鐘）</label>
+        <input type="number" id="quiz-minutes" value="20" min="1" max="120" style="width:110px;" />
+
+        <div style="margin-top:12px;">
+          <label>出題方向</label>
+          <select id="quiz-mode">
+            <option value="en2zh">看英文單字 → 選中文解釋</option>
+            <option value="zh2en">看中文解釋 → 選英文單字</option>
+          </select>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label>篩選來源 Resource（不選＝全部）</label>
+          <div id="quiz-resource-filter" class="tag-filter-row"></div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label>出題標籤（不選＝全部）</label>
+          <div id="quiz-tag-filter" class="tag-filter-row"></div>
+        </div>
+
+        <div class="btn-row" style="margin-top:16px;">
+          <button class="btn btn-gold" onclick="startQuiz()">🎯 開始測驗</button>
+        </div>
+        <div id="quiz-setup-status"></div>
+      </div>
+    </div>
+
+    <div id="quiz-running" style="display:none;">
+      <div class="card" style="text-align:center;padding-bottom:14px;">
+        <div class="quiz-timer" id="quiz-timer">—:——</div>
+        <div class="quiz-progress-bar-wrap">
+          <div class="quiz-progress-bar" id="quiz-bar" style="width:0%"></div>
+        </div>
+        <div class="quiz-progress" id="quiz-progress">準備中…</div>
+      </div>
+      <div class="card">
+        <div class="quiz-question" id="quiz-question">—</div>
+        <div class="quiz-sub" id="quiz-sub"></div>
+        <div class="choices" id="quiz-choices"></div>
+        <div class="quiz-feedback" id="quiz-feedback"></div>
+      </div>
+    </div>
+
+    <div id="quiz-results" style="display:none;">
+      <div class="card">
+        <div class="section-title">測驗結果</div>
+        <div id="result-stats"></div>
+      </div>
+      <div class="card" id="wrong-card" style="display:none;">
+        <div class="section-title">錯題複習 🔁</div>
+        <div id="wrong-list"></div>
+      </div>
+      <div class="btn-row" style="padding-bottom:20px;">
+        <button class="btn btn-primary" onclick="resetQuiz()">🔄 再來一次</button>
+        <button class="btn btn-outline" onclick="showScreen('study', document.querySelectorAll(\'.nav-btn\')[1])">📚 背誦錯題</button>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ══════════════ WORD BANK ══════════════ -->
+  <section class="screen" id="screen-bank">
+    <div class="bank-controls">
+      <input type="text" id="bank-search" placeholder="🔍 搜尋單字 / 中文…" oninput="renderBank()" />
+      <button class="btn btn-outline btn-sm" onclick="confirmClearAll()">🗑</button>
+    </div>
+    <div id="bank-list"></div>
+  </section>
+
+</main>
+
+<!-- Confirm Dialog -->
+<div class="overlay" id="confirm-overlay">
+  <div class="dialog">
+    <h3 id="confirm-title">確認操作</h3>
+    <p id="confirm-msg">確定嗎？</p>
+    <div class="btn-row">
+      <button class="btn btn-danger" onclick="confirmAction()">確定</button>
+      <button class="btn btn-outline" onclick="closeConfirm()">取消</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  DATA LAYER
+// ═══════════════════════════════════════════
+const STORAGE_KEY = 'wordvault_v1';
+
+function loadWords() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function saveWords(words) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(words));
+  updateGlobalCount();
+}
+
+function updateGlobalCount() {
+  const words = loadWords();
+  const noZh = words.filter(w => !w.chinese).length;
+  document.getElementById('global-count').textContent =
+    `共 ${words.length} 個單字　${noZh ? `⚠ 未翻譯 ${noZh}` : '✓ 全部已翻譯'}`;
+}
+
+// ═══════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════
+function showScreen(name, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  if (name === 'bank') renderBank();
+  if (name === 'quiz') { renderQuizResourceFilter(); renderQuizTagFilter(); }
+  if (name === 'study') { renderStudyTagFilter(); renderStudyResourceFilter(); }
+}
+
+// ═══════════════════════════════════════════
+//  IMPORT
+// ═══════════════════════════════════════════
+
+// RFC-4180 compliant CSV parser
+function parseCSV(text) {
+  const rows = [];
+  let col = '', row = [], inQuote = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i], next = text[i + 1];
+    if (inQuote) {
+      if (ch === '"' && next === '"') { col += '"'; i++; }       // escaped quote
+      else if (ch === '"')           { inQuote = false; }        // end quote
+      else                           { col += ch; }
+    } else {
+      if      (ch === '"')  { inQuote = true; }
+      else if (ch === ',')  { row.push(col.trim()); col = ''; }
+      else if (ch === '\n' || (ch === '\r' && next === '\n')) {
+        if (ch === '\r') i++;
+        row.push(col.trim()); col = '';
+        if (row.some(c => c)) rows.push(row);   // skip blank lines
+        row = [];
+      } else { col += ch; }
+    }
+  }
+  if (col || row.length) { row.push(col.trim()); if (row.some(c => c)) rows.push(row); }
+  return rows;
+}
+
+// Detect if this looks like the pre-translated CSV (col B = Chinese translation)
+// Heuristic: first row is a header containing "word" or "translation"
+function isPreTranslatedCSV(rows) {
+  if (rows.length < 2) return false;
+  const header = rows[0].map(h => h.toLowerCase());
+  return header.some(h => h.includes('word') || h.includes('translation') || h.includes('definition'));
+}
+
+function handleCsvFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('import-input').value = e.target.result;
+    showStatus('import-status', `📂 已載入「${file.name}」，點「匯入」繼續`, 'info');
+  };
+  reader.readAsText(file, 'UTF-8');
+  input.value = '';   // reset so same file can be re-selected
+}
+
+function importWords() {
+  const raw = document.getElementById('import-input').value.trim();
+  if (!raw) { showStatus('import-status', '請先貼上內容或上傳 CSV 檔案', 'error'); return; }
+
+  const batchResource = document.getElementById('import-resource').value.trim();
+  const existingWords = loadWords();
+  const existingSet   = new Set(existingWords.map(w => w.word.toLowerCase()));
+
+  let added = 0, skipped = 0, withTranslation = 0;
+
+  // ── Try CSV parser first ──────────────────────────────────
+  const rows = parseCSV(raw);
+  const isCsv = isPreTranslatedCSV(rows);
+
+  if (isCsv) {
+    // Pre-translated CSV: Word | Translation | Resource
+    // Skip header row (row[0])
+    for (let i = 1; i < rows.length; i++) {
+      const [wordRaw = '', chineseRaw = '', resRaw = ''] = rows[i];
+      const word     = wordRaw.trim();
+      const chinese  = chineseRaw.trim();
+      const resource = resRaw.trim() || batchResource;
+      if (!word) continue;
+
+      if (existingSet.has(word.toLowerCase())) {
+        skipped++;
+      } else {
+        existingWords.push({ word, tag: '', resource, chinese, errorCount: 0, pronunciation: '' });
+        existingSet.add(word.toLowerCase());
+        added++;
+        if (chinese) withTranslation++;
+      }
+    }
+  } else {
+    // ── Simple line-by-line format: word, tag, resource ──────
+    const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+    for (const line of lines) {
+      const parts   = parseCSV(line)[0] || [];        // parse single line as CSV row
+      const word    = (parts[0] || '').trim();
+      const tag     = (parts[1] || '').trim();
+      const lineRes = (parts[2] || '').trim();
+      const resource = lineRes || batchResource;
+      if (!word) continue;
+
+      if (existingSet.has(word.toLowerCase())) {
+        skipped++;
+      } else {
+        existingWords.push({ word, tag, resource, chinese: '', errorCount: 0, pronunciation: '' });
+        existingSet.add(word.toLowerCase());
+        added++;
+      }
+    }
+  }
+
+  saveWords(existingWords);
+  document.getElementById('import-input').value = '';
+
+  const extra = isCsv && withTranslation
+    ? `（含 ${withTranslation} 筆中文翻譯，無需再 AI 翻譯）`
+    : '';
+  showStatus('import-status',
+    `✅ 匯入 ${added} 個${skipped ? `，跳過重複 ${skipped} 個` : ''} ${extra}`,
+    'success'
+  );
+}
+
+// ═══════════════════════════════════════════
+//  AI BATCH TRANSLATE
+// ═══════════════════════════════════════════
+function toggleApiKey() {
+  const el = document.getElementById('apikey-section');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+async function batchTranslate() {
+  const words = loadWords();
+  const need = words.filter(w => !w.chinese);
+
+  if (need.length === 0) {
+    showStatus('translate-status', '所有單字都已有翻譯 ✓', 'success');
+    return;
+  }
+
+  const btn = document.getElementById('translate-btn');
+  btn.innerHTML = '<span class="loader"></span> 翻譯中…';
+  btn.disabled = true;
+  showStatus('translate-status', `⏳ 正在翻譯 ${need.length} 個單字，請稍候…`, 'info');
+
+  const apiKey = document.getElementById('api-key-input').value.trim();
+  const headers = { 'Content-Type': 'application/json' };
+  if (apiKey) headers['x-api-key'] = apiKey;
+
+  const CHUNK = 60;
+  let translated = 0;
+
+  try {
+    for (let i = 0; i < need.length; i += CHUNK) {
+      const chunk = need.slice(i, i + CHUNK);
+      const wordListStr = chunk.map(w =>
+        `${w.word}${w.tag ? ' (' + w.tag + ')' : ''}`
+      ).join('\n');
+
+      const resp = await fetch('https://api.anthropic.com/v1/messages', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({
+          model: 'claude-sonnet-4-20250514',
+          max_tokens: 1000,
+          messages: [{
+            role: 'user',
+            content: `請將以下英文單字翻譯成繁體中文。格式為「詞性. 解釋」，例如 "n. 韌性；彈性" 或 "adj. 短暫的；無常的"。
+只回傳純 JSON 物件，key 是英文單字（與輸入完全一致），value 是中文解釋。不要加任何說明文字、不要用 markdown、不要有前後綴。
+
+${wordListStr}`
+          }]
+        })
+      });
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error?.message || `API 錯誤 ${resp.status}`);
+      }
+
+      const data = await resp.json();
+      const raw = data.content?.find(c => c.type === 'text')?.text || '{}';
+
+      let translations;
+      try {
+        const clean = raw.replace(/```json|```/g, '').trim();
+        translations = JSON.parse(clean);
+      } catch {
+        // Try to extract JSON object from response
+        const match = raw.match(/\{[\s\S]*\}/);
+        if (match) translations = JSON.parse(match[0]);
+        else throw new Error('AI 回應格式錯誤，請重試');
+      }
+
+      const allWords = loadWords();
+      for (const w of allWords) {
+        if (w.chinese) continue;
+        const found = translations[w.word] || translations[w.word.toLowerCase()];
+        if (found) { w.chinese = found; translated++; }
+      }
+      saveWords(allWords);
+
+      if (i + CHUNK < need.length) {
+        showStatus('translate-status', `⏳ 已翻譯 ${translated} / ${need.length}…`, 'info');
+        await new Promise(r => setTimeout(r, 400)); // brief pause between chunks
+      }
+    }
+
+    showStatus('translate-status', `✅ 完成！共翻譯 ${translated} 個單字`, 'success');
+  } catch (err) {
+    showStatus('translate-status', `❌ ${err.message}`, 'error');
+  } finally {
+    btn.innerHTML = '✨ 開始 AI 翻譯';
+    btn.disabled = false;
+    updateGlobalCount();
+  }
+}
+
+// ═══════════════════════════════════════════
+//  STUDY MODE
+// ═══════════════════════════════════════════
+let studyWords = [];
+let studySelectedTag = null;
+let studySelectedResources = new Set();
+
+function getAllTags() {
+  const tags = new Set(loadWords().map(w => w.tag).filter(Boolean));
+  return [...tags].sort();
+}
+
+function getAllResources() {
+  const res = new Set(loadWords().map(w => w.resource).filter(Boolean));
+  return [...res].sort();
+}
+
+function renderStudyTagFilter() {
+  const tags = getAllTags();
+  const container = document.getElementById('study-tag-filter');
+  if (tags.length === 0) { container.style.display = 'none'; return; }
+  container.style.display = 'flex';
+  container.innerHTML = tags.map(t => `
+    <span class="tag-chip ${studySelectedTag === t ? 'active' : ''}"
+          onclick="studySelectTag('${escJs(t)}')">${t}</span>
+  `).join('');
+}
+
+function renderStudyResourceFilter() {
+  const resources = getAllResources();
+  const container = document.getElementById('study-resource-filter');
+  if (resources.length === 0) { container.style.display = 'none'; return; }
+  container.style.display = 'flex';
+  container.innerHTML = resources.map(r => `
+    <span class="resource-chip ${studySelectedResources.has(r) ? 'active' : ''}"
+          onclick="studyToggleResource('${escJs(r)}')">${escHtml(r)}</span>
+  `).join('');
+}
+
+function studySelectTag(tag) {
+  studySelectedTag = studySelectedTag === tag ? null : tag;
+  renderStudyTagFilter();
+}
+
+function studyToggleResource(res) {
+  if (studySelectedResources.has(res)) studySelectedResources.delete(res);
+  else studySelectedResources.add(res);
+  renderStudyResourceFilter();
+}
+
+function startStudy(all = false) {
+  let pool = loadWords();
+
+  if (pool.length === 0) {
+    document.getElementById('study-list').innerHTML =
+      '<div class="empty-state">尚無單字，請先到「匯入」頁面新增。</div>';
+    return;
+  }
+
+  if (studySelectedResources.size > 0)
+    pool = pool.filter(w => studySelectedResources.has(w.resource));
+  if (studySelectedTag)
+    pool = pool.filter(w => w.tag === studySelectedTag);
+
+  if (pool.length === 0) {
+    document.getElementById('study-list').innerHTML =
+      '<div class="empty-state">目前篩選條件下沒有單字，請調整過濾器。</div>';
+    return;
+  }
+
+  const sortByError = document.getElementById('sort-error-toggle').checked;
+  if (sortByError) pool.sort((a, b) => (b.errorCount||0) - (a.errorCount||0));
+  else shuffle(pool);
+
+  if (!all) {
+    const n = parseInt(document.getElementById('study-n').value) || 20;
+    pool = pool.slice(0, n);
+  }
+
+  studyWords = pool;
+  renderStudyList();
+
+  if (document.getElementById('autoread-toggle').checked && pool.length > 0) {
+    setTimeout(() => speak(pool[0].word), 500);
+  }
+}
+
+function renderStudyList() {
+  const showZh = document.getElementById('show-zh-toggle').checked;
+  const container = document.getElementById('study-list');
+
+  if (studyWords.length === 0) {
+    container.innerHTML = '<div class="empty-state">請先點「隨機抽 N」或「全部」開始背誦。</div>';
+    return;
+  }
+
+  container.innerHTML = studyWords.map((w, i) => `
+    <div class="word-card">
+      <div class="word-card-main">
+        <div class="word-en">
+          ${escHtml(w.word)}
+          ${w.tag ? `<span class="word-tag">${escHtml(w.tag)}</span>` : ''}
+        </div>
+        <div class="word-zh ${showZh ? '' : 'hidden'}" id="wzh-${i}">
+          ${w.chinese ? escHtml(w.chinese) : '<em style="opacity:0.4">未翻譯</em>'}
+        </div>
+        ${w.errorCount ? `<div class="word-error">❌ 曾錯 ${w.errorCount} 次</div>` : ''}
+        ${w.resource ? `<div class="word-resource">📎 ${escHtml(w.resource)}</div>` : ''}
+      </div>
+      <button class="btn-icon" onclick="speak('${escJs(w.word)}')" title="朗讀">🔊</button>
+    </div>
+  `).join('');
+}
+
+function speak(word) {
+  if (!('speechSynthesis' in window)) { alert('您的瀏覽器不支援語音朗讀'); return; }
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(word);
+  utt.lang = 'en-US';
+  utt.rate = 0.82;
+  utt.pitch = 1;
+  window.speechSynthesis.speak(utt);
+}
+
+// ═══════════════════════════════════════════
+//  QUIZ MODE
+// ═══════════════════════════════════════════
+let quizState = null;
+let quizTimer = null;
+let quizSelectedTags = new Set();
+let quizSelectedResources = new Set();
+
+function renderQuizResourceFilter() {
+  const resources = getAllResources();
+  const container = document.getElementById('quiz-resource-filter');
+  if (resources.length === 0) {
+    container.innerHTML = '<span style="font-size:12px;color:var(--ink2);">（無 Resource）</span>';
+    return;
+  }
+  container.innerHTML = resources.map(r => `
+    <span class="resource-chip ${quizSelectedResources.has(r) ? 'active' : ''}"
+          onclick="quizToggleResource('${escJs(r)}')">${escHtml(r)}</span>
+  `).join('');
+}
+
+function renderQuizTagFilter() {
+  const tags = getAllTags();
+  const container = document.getElementById('quiz-tag-filter');
+  if (tags.length === 0) { container.innerHTML = '<span style="font-size:12px;color:var(--ink2);">（無標籤）</span>'; return; }
+  container.innerHTML = tags.map(t => `
+    <span class="tag-chip ${quizSelectedTags.has(t) ? 'active' : ''}"
+          onclick="quizToggleTag('${escJs(t)}')">${t}</span>
+  `).join('');
+}
+
+function quizToggleResource(res) {
+  if (quizSelectedResources.has(res)) quizSelectedResources.delete(res);
+  else quizSelectedResources.add(res);
+  renderQuizResourceFilter();
+}
+
+function quizToggleTag(tag) {
+  if (quizSelectedTags.has(tag)) quizSelectedTags.delete(tag);
+  else quizSelectedTags.add(tag);
+  renderQuizTagFilter();
+}
+
+function startQuiz() {
+  let pool = loadWords().filter(w => w.chinese);
+
+  if (quizSelectedResources.size > 0)
+    pool = pool.filter(w => quizSelectedResources.has(w.resource));
+  if (quizSelectedTags.size > 0)
+    pool = pool.filter(w => quizSelectedTags.has(w.tag));
+
+  if (pool.length < 4) {
+    showStatus('quiz-setup-status', '需要至少 4 個有中文翻譯的單字才能開始。', 'error');
+    return;
+  }
+
+  const minutes = parseInt(document.getElementById('quiz-minutes').value) || 20;
+  const mode = document.getElementById('quiz-mode').value;
+  shuffle(pool);
+
+  quizState = {
+    pool,
+    mode,
+    index: 0,
+    correct: 0,
+    wrong: 0,
+    totalSeconds: minutes * 60,
+    secondsLeft: minutes * 60,
+    wrongWords: [],
+    answered: false
+  };
+
+  document.getElementById('quiz-setup').style.display = 'none';
+  document.getElementById('quiz-running').style.display = 'block';
+  document.getElementById('quiz-results').style.display = 'none';
+
+  startQuizTimer();
+  renderQuestion();
+}
+
+function startQuizTimer() {
+  updateTimer();
+  quizTimer = setInterval(() => {
+    quizState.secondsLeft--;
+    updateTimer();
+    if (quizState.secondsLeft <= 0) { clearInterval(quizTimer); showResults(); }
+  }, 1000);
+}
+
+function updateTimer() {
+  const s = quizState.secondsLeft;
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  const el = document.getElementById('quiz-timer');
+  el.textContent = `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  el.classList.toggle('urgent', s <= 60);
+
+  // Time-based progress bar
+  const pct = (1 - s / quizState.totalSeconds) * 100;
+  document.getElementById('quiz-bar').style.width = pct + '%';
+}
+
+function renderQuestion() {
+  if (quizState.index >= quizState.pool.length) {
+    clearInterval(quizTimer);
+    showResults();
+    return;
+  }
+
+  quizState.answered = false;
+  const current = quizState.pool[quizState.index];
+  const all = quizState.pool;
+  const mode = quizState.mode;
+
+  document.getElementById('quiz-progress').textContent =
+    `第 ${quizState.index + 1} 題 / 共 ${quizState.pool.length} 題`;
+  document.getElementById('quiz-feedback').innerHTML = '';
+
+  // Pick 3 distractors
+  const others = all.filter((_, i) => i !== quizState.index);
+  shuffle(others);
+  const distractors = others.slice(0, 3);
+
+  let question, correctAns, choices;
+
+  if (mode === 'en2zh') {
+    question = current.word;
+    document.getElementById('quiz-sub').textContent = current.tag ? `(${current.tag})` : '';
+    correctAns = current.chinese;
+    choices = shuffle([current, ...distractors].map(w => w.chinese));
+  } else {
+    question = current.chinese;
+    document.getElementById('quiz-sub').textContent = '';
+    correctAns = current.word;
+    choices = shuffle([current, ...distractors].map(w => w.word));
+  }
+
+  document.getElementById('quiz-question').textContent = question;
+
+  document.getElementById('quiz-choices').innerHTML = choices.map(c => `
+    <button class="choice-btn"
+      onclick="answerQuiz(this,'${escJs(c)}','${escJs(correctAns)}','${escJs(current.word)}')">
+      ${escHtml(c)}
+    </button>
+  `).join('');
+}
+
+function answerQuiz(btn, chosen, correct, wordKey) {
+  if (quizState.answered) return;
+  quizState.answered = true;
+
+  const allBtns = document.querySelectorAll('.choice-btn');
+  allBtns.forEach(b => b.disabled = true);
+
+  const isCorrect = chosen === correct;
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    quizState.correct++;
+    document.getElementById('quiz-feedback').innerHTML =
+      '<span style="color:var(--green);font-weight:600">✓ 正確！</span>';
+    setTimeout(nextQuestion, 750);
+  } else {
+    btn.classList.add('wrong');
+    allBtns.forEach(b => { if (b.textContent.trim() === correct) b.classList.add('correct'); });
+    quizState.wrong++;
+
+    // Update error count in storage
+    const allStored = loadWords();
+    const found = allStored.find(w => w.word === wordKey);
+    if (found) {
+      found.errorCount = (found.errorCount || 0) + 1;
+      saveWords(allStored);
+      // Also update in pool
+      const pw = quizState.pool.find(w => w.word === wordKey);
+      if (pw) pw.errorCount = found.errorCount;
+      quizState.wrongWords.push({ ...found });
+    }
+
+    document.getElementById('quiz-feedback').innerHTML =
+      `<span style="color:var(--red)">✗ 正確答案：${escHtml(correct)}</span>`;
+    setTimeout(nextQuestion, 1500);
+  }
+}
+
+function nextQuestion() {
+  quizState.index++;
+  if (quizState.index >= quizState.pool.length || quizState.secondsLeft <= 0) {
+    clearInterval(quizTimer);
+    showResults();
+  } else {
+    renderQuestion();
+  }
+}
+
+function showResults() {
+  clearInterval(quizTimer);
+  document.getElementById('quiz-running').style.display = 'none';
+  document.getElementById('quiz-results').style.display = 'block';
+
+  const { correct, wrong, wrongWords, totalSeconds, secondsLeft } = quizState;
+  const total = correct + wrong;
+  const pct = total ? Math.round(correct / total * 100) : 0;
+  const used = totalSeconds - secondsLeft;
+  const m = Math.floor(used / 60), s = used % 60;
+
+  document.getElementById('result-stats').innerHTML = `
+    <div class="result-stat"><span>作答題數</span><span class="val">${total}</span></div>
+    <div class="result-stat"><span>正確</span><span class="val good">${correct}</span></div>
+    <div class="result-stat"><span>錯誤</span><span class="val bad">${wrong}</span></div>
+    <div class="result-stat"><span>正確率</span><span class="val ${pct >= 70 ? 'good' : 'bad'}">${pct}%</span></div>
+    <div class="result-stat"><span>用時</span><span class="val">${m} 分 ${s} 秒</span></div>
+  `;
+
+  const wrongUnique = [...new Map(wrongWords.map(w => [w.word, w])).values()];
+  if (wrongUnique.length > 0) {
+    document.getElementById('wrong-card').style.display = 'block';
+    document.getElementById('wrong-list').innerHTML = wrongUnique.map(w => `
+      <div class="wrong-item">
+        <div>
+          <div style="font-weight:700">${escHtml(w.word)} ${w.tag ? `<span class="word-tag">${escHtml(w.tag)}</span>` : ''}</div>
+          <div class="zh">${escHtml(w.chinese)}</div>
+          ${w.resource ? `<div class="word-resource">📎 ${escHtml(w.resource)}</div>` : ''}
+        </div>
+        <div style="display:flex;align-items:center;gap:6px;">
+          <span style="font-size:11px;color:var(--red);">×${w.errorCount}</span>
+          <button class="btn-icon" onclick="speak('${escJs(w.word)}')" title="朗讀" style="width:30px;height:30px;font-size:13px;">🔊</button>
+        </div>
+      </div>
+    `).join('');
+
+    // Pre-load wrong words into study mode
+    studyWords = wrongUnique;
+  } else {
+    document.getElementById('wrong-card').style.display = 'none';
+  }
+}
+
+function resetQuiz() {
+  clearInterval(quizTimer);
+  quizState = null;
+  document.getElementById('quiz-setup').style.display = 'block';
+  document.getElementById('quiz-running').style.display = 'none';
+  document.getElementById('quiz-results').style.display = 'none';
+  document.getElementById('quiz-setup-status').textContent = '';
+}
+
+// ═══════════════════════════════════════════
+//  WORD BANK
+// ═══════════════════════════════════════════
+function renderBank() {
+  const q = (document.getElementById('bank-search')?.value || '').toLowerCase();
+  let words = loadWords();
+  if (q) words = words.filter(w =>
+    w.word.toLowerCase().includes(q) || (w.chinese && w.chinese.includes(q)) || (w.tag && w.tag.toLowerCase().includes(q)) || (w.resource && w.resource.toLowerCase().includes(q))
+  );
+
+  const container = document.getElementById('bank-list');
+  if (words.length === 0) {
+    container.innerHTML = `<div class="empty-state">${q ? '查無符合的單字' : '單字庫是空的，請先匯入。'}</div>`;
+    return;
+  }
+
+  container.innerHTML = words.map(w => `
+    <div class="word-card">
+      <div class="word-card-main">
+        <div class="word-en">
+          ${escHtml(w.word)}
+          ${w.tag ? `<span class="word-tag">${escHtml(w.tag)}</span>` : ''}
+        </div>
+        <div class="word-zh">
+          ${w.chinese ? escHtml(w.chinese) : '<em style="opacity:0.4">未翻譯</em>'}
+        </div>
+        ${w.errorCount ? `<div class="word-error">❌ 累計錯誤 ${w.errorCount} 次</div>` : ''}
+        ${w.resource ? `<div class="word-resource">📎 ${escHtml(w.resource)}</div>` : ''}
+      </div>
+      <div style="display:flex;gap:6px;align-items:center;flex-shrink:0;">
+        <button class="btn-icon" onclick="speak('${escJs(w.word)}')" title="朗讀" style="width:30px;height:30px;font-size:13px;">🔊</button>
+        <button class="btn-icon" onclick="confirmDeleteWord('${escJs(w.word)}')" title="刪除" style="width:30px;height:30px;font-size:13px;">🗑</button>
+      </div>
+    </div>
+  `).join('');
+}
+
+// ═══════════════════════════════════════════
+//  CONFIRM DIALOG
+// ═══════════════════════════════════════════
+let pendingAction = null;
+
+function confirmDeleteWord(word) {
+  pendingAction = () => {
+    const words = loadWords().filter(w => w.word !== word);
+    saveWords(words);
+    renderBank();
+  };
+  document.getElementById('confirm-title').textContent = '刪除單字';
+  document.getElementById('confirm-msg').textContent = `確定要刪除「${word}」嗎？`;
+  document.getElementById('confirm-overlay').classList.add('show');
+}
+
+function confirmClearAll() {
+  pendingAction = () => { saveWords([]); renderBank(); };
+  document.getElementById('confirm-title').textContent = '清空單字庫';
+  document.getElementById('confirm-msg').textContent = '確定要清空所有單字嗎？此動作無法復原。';
+  document.getElementById('confirm-overlay').classList.add('show');
+}
+
+function confirmAction() {
+  if (pendingAction) { pendingAction(); pendingAction = null; }
+  closeConfirm();
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('show');
+}
+
+document.getElementById('confirm-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeConfirm();
+});
+
+// ═══════════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════════
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function showStatus(id, msg, type) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'status-msg status-' + type;
+  el.textContent = msg;
+}
+
+function escHtml(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escJs(str) {
+  return String(str || '')
+    .replace(/\\/g,'\\\\').replace(/'/g,"\\'")
+    .replace(/"/g,'\\"').replace(/\n/g,'\\n');
+}
+
+// ═══════════════════════════════════════════
+//  BACKUP & RESTORE
+// ═══════════════════════════════════════════
+const BACKUP_TS_KEY  = 'wordvault_last_backup';
+const REMINDER_KEY   = 'wordvault_reminder_days';
+
+function markBackupDone() {
+  const now = Date.now();
+  localStorage.setItem(BACKUP_TS_KEY, now);
+  updateLastBackupLabel();
+  hideBanner();
+}
+
+function updateLastBackupLabel() {
+  const ts = localStorage.getItem(BACKUP_TS_KEY);
+  const el = document.getElementById('last-backup-label');
+  if (!el) return;
+  if (!ts) { el.textContent = '尚未備份'; return; }
+  const days = Math.floor((Date.now() - Number(ts)) / 86400000);
+  el.textContent = days === 0 ? '今天已備份 ✓' : `${days} 天前`;
+}
+
+function saveReminderSetting() {
+  const val = document.getElementById('reminder-interval').value;
+  localStorage.setItem(REMINDER_KEY, val);
+}
+
+function loadReminderSetting() {
+  const val = localStorage.getItem(REMINDER_KEY) || '30';
+  const el = document.getElementById('reminder-interval');
+  if (el) el.value = val;
+  return Number(val);
+}
+
+function checkBackupReminder() {
+  const days = loadReminderSetting();
+  updateLastBackupLabel();
+  if (days === 0) return;
+
+  const ts = localStorage.getItem(BACKUP_TS_KEY);
+  if (!ts) {
+    // Never backed up — remind after first import
+    if (loadWords().length > 0) showBanner('📦 你還沒做過備份，建議到「匯入」頁面下載一份 JSON 備份。');
+    return;
+  }
+  const elapsed = Math.floor((Date.now() - Number(ts)) / 86400000);
+  if (elapsed >= days) {
+    const label = days === 30 ? '一個月' : '一季';
+    showBanner(`⏰ 距離上次備份已超過${label}，建議到「匯入」頁面下載最新備份。`);
+  }
+}
+
+function showBanner(msg) {
+  document.getElementById('reminder-msg').textContent = msg;
+  document.getElementById('reminder-banner').classList.add('show');
+}
+
+function hideBanner() {
+  document.getElementById('reminder-banner').classList.remove('show');
+}
+
+function dismissReminder() {
+  hideBanner();
+}
+
+// ── EXPORT ──────────────────────────────────
+function exportJSON() {
+  const words = loadWords();
+  if (words.length === 0) { alert('單字庫是空的，無法匯出。'); return; }
+
+  const payload = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    count: words.length,
+    words
+  };
+
+  downloadFile(
+    `WordVault_backup_${datestamp()}.json`,
+    JSON.stringify(payload, null, 2),
+    'application/json'
+  );
+  markBackupDone();
+}
+
+function exportCSV() {
+  const words = loadWords();
+  if (words.length === 0) { alert('單字庫是空的，無法匯出。'); return; }
+
+  const header = ['Word / Phrase / Sentence', 'Translation / Definition', 'Resource', 'Tag', 'Error Count'];
+  const rows = words.map(w => [
+    csvCell(w.word),
+    csvCell(w.chinese),
+    csvCell(w.resource),
+    csvCell(w.tag),
+    w.errorCount || 0
+  ]);
+
+  const csv = [header, ...rows].map(r => r.join(',')).join('\n');
+  downloadFile(`WordVault_${datestamp()}.csv`, '\uFEFF' + csv, 'text/csv');  // BOM for Excel
+  markBackupDone();
+}
+
+function csvCell(val) {
+  const s = String(val || '');
+  return s.includes(',') || s.includes('"') || s.includes('\n')
+    ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function datestamp() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function downloadFile(filename, content, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── RESTORE ─────────────────────────────────
+function restoreBackup(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    try {
+      if (file.name.endsWith('.json')) {
+        restoreFromJSON(text);
+      } else {
+        restoreFromCSV(text);
+      }
+    } catch (err) {
+      showStatus('restore-status', `❌ 還原失敗：${err.message}`, 'error');
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+  input.value = '';
+}
+
+function restoreFromJSON(text) {
+  const payload = JSON.parse(text);
+  const incoming = payload.words || payload;   // support both wrapped and raw array
+  if (!Array.isArray(incoming)) throw new Error('JSON 格式不符');
+
+  const existing = loadWords();
+  const existingSet = new Set(existing.map(w => w.word.toLowerCase()));
+  let added = 0, skipped = 0;
+
+  for (const w of incoming) {
+    if (!w.word) continue;
+    if (existingSet.has(w.word.toLowerCase())) { skipped++; continue; }
+    existing.push({
+      word: w.word, tag: w.tag || '', resource: w.resource || '',
+      chinese: w.chinese || '', errorCount: w.errorCount || 0, pronunciation: w.pronunciation || ''
+    });
+    existingSet.add(w.word.toLowerCase());
+    added++;
+  }
+
+  saveWords(existing);
+  showStatus('restore-status',
+    `✅ 還原完成：新增 ${added} 個${skipped ? `，跳過重複 ${skipped} 個` : ''}`,
+    'success'
+  );
+}
+
+function restoreFromCSV(text) {
+  // Reuse the existing CSV import logic
+  const rows = parseCSV(text);
+  if (rows.length < 2) throw new Error('CSV 內容為空');
+
+  const existing = loadWords();
+  const existingSet = new Set(existing.map(w => w.word.toLowerCase()));
+  let added = 0, skipped = 0;
+
+  // Detect column positions from header
+  const header = rows[0].map(h => h.toLowerCase());
+  const iCol = header.findIndex(h => h.includes('word'));
+  const zhCol = header.findIndex(h => h.includes('translation') || h.includes('definition'));
+  const resCol = header.findIndex(h => h.includes('resource'));
+  const tagCol = header.findIndex(h => h.includes('tag'));
+  const errCol = header.findIndex(h => h.includes('error'));
+
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    const word = (r[iCol >= 0 ? iCol : 0] || '').trim();
+    if (!word) continue;
+    if (existingSet.has(word.toLowerCase())) { skipped++; continue; }
+
+    existing.push({
+      word,
+      chinese:    (r[zhCol  >= 0 ? zhCol  : 1] || '').trim(),
+      resource:   (r[resCol >= 0 ? resCol : 2] || '').trim(),
+      tag:        (r[tagCol >= 0 ? tagCol : 3] || '').trim(),
+      errorCount: Number(r[errCol >= 0 ? errCol : 4] || 0),
+      pronunciation: ''
+    });
+    existingSet.add(word.toLowerCase());
+    added++;
+  }
+
+  saveWords(existing);
+  showStatus('restore-status',
+    `✅ 還原完成：新增 ${added} 個${skipped ? `，跳過重複 ${skipped} 個` : ''}`,
+    'success'
+  );
+}
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+updateGlobalCount();
+checkBackupReminder();
+</script>
+</body>
+</html>
