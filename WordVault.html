@@ -1,0 +1,2531 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+  <title>WordVault · 英文學習</title>
+  <style>
+    :root {
+      --bg: #f0eeec;
+      --surface: #f7f6f4;
+      --ink: #2c2c2e;
+      --ink2: #6e6e73;
+      --gold: #9e8256;
+      --gold-light: #e2d9c8;
+      --green: #4a7860;
+      --red: #9a5050;
+      --blue: #4f6f87;
+      --border: #d8d4cf;
+      --radius: 14px;
+      --shadow: 0 2px 16px rgba(0,0,0,0.06);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "PingFang TC", sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      min-height: 100vh;
+      max-width: 500px;
+      margin: 0 auto;
+    }
+
+    /* ── HEADER ── */
+    .app-header {
+      background: #6b7f8e;
+      color: white;
+      padding: 18px 20px 0;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: 0 2px 12px rgba(80,100,115,0.25);
+    }
+
+    .header-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .app-title {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      font-size: 20px;
+      font-weight: 600;
+      color: #f0ece6;
+      letter-spacing: 0.3px;
+    }
+
+    .word-count-badge {
+      font-size: 11px;
+      color: rgba(255,255,255,0.45);
+      margin-top: 3px;
+    }
+
+    .nav {
+      display: flex;
+      margin-top: 14px;
+    }
+
+    .nav-btn {
+      flex: 1;
+      background: transparent;
+      border: none;
+      color: rgba(255,255,255,0.45);
+      padding: 10px 4px;
+      font-family: inherit;
+      font-size: 12px;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.2s;
+    }
+
+    .nav-btn.active {
+      color: #f0ece6;
+      border-bottom-color: #c8d4da;
+    }
+
+    /* ── SCREENS ── */
+    .screen { display: none; padding: 18px; animation: fadeIn 0.22s ease; }
+    .screen.active { display: block; }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(8px); }
+      to   { opacity: 1; transform: translateY(0); }
+    }
+
+    /* ── CARDS ── */
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 14px;
+      box-shadow: var(--shadow);
+    }
+
+    .section-title {
+      font-size: 11px;
+      font-weight: 700;
+      color: var(--ink2);
+      text-transform: uppercase;
+      letter-spacing: 1.5px;
+      margin-bottom: 14px;
+    }
+
+    /* ── FORM ELEMENTS ── */
+    textarea, input[type="text"], input[type="number"], input[type="password"], select {
+      width: 100%;
+      background: var(--bg);
+      border: 1.5px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 12px;
+      font-family: inherit;
+      font-size: 14px;
+      color: var(--ink);
+      outline: none;
+      transition: border-color 0.2s;
+      appearance: none;
+    }
+
+    textarea:focus, input:focus, select:focus { border-color: var(--gold); }
+
+    textarea {
+      resize: vertical;
+      min-height: 130px;
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    label {
+      font-size: 12px;
+      color: var(--ink2);
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    /* ── BUTTONS ── */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 6px;
+      padding: 10px 18px;
+      border: none;
+      border-radius: 8px;
+      font-family: inherit;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.15s;
+      white-space: nowrap;
+    }
+
+    .btn-primary { background: var(--ink); color: white; }
+    .btn-primary:hover:not(:disabled) { background: #2d2b50; }
+    .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-gold { background: var(--gold); color: white; }
+    .btn-gold:hover:not(:disabled) { background: #b07d14; }
+    .btn-gold:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-outline { background: transparent; color: var(--ink); border: 1.5px solid var(--border); }
+    .btn-outline:hover { border-color: var(--ink); background: rgba(0,0,0,0.03); }
+
+    .btn-danger { background: var(--red); color: white; }
+    .btn-danger:hover { background: #a93226; }
+
+    .btn-sm { padding: 6px 12px; font-size: 12px; border-radius: 6px; }
+
+    .btn-icon {
+      width: 28px; height: 28px;
+      padding: 0; border-radius: 7px;
+      display: inline-flex; align-items: center; justify-content: center;
+      font-size: 13px;
+      background: transparent;
+      border: 1px solid var(--border);
+      cursor: pointer; transition: all 0.15s;
+      color: var(--ink2);
+    }
+    .btn-icon:hover { background: var(--gold-light); border-color: var(--gold); }
+
+    .word-card-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 5px;
+      align-self: center;
+      flex-shrink: 0;
+    }
+
+    .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+
+    /* ── STATUS ── */
+    .status-msg {
+      font-size: 13px;
+      padding: 8px 12px;
+      border-radius: 7px;
+      margin-top: 10px;
+      line-height: 1.5;
+    }
+    .status-success { background: #e8efec; color: var(--green); border-left: 3px solid var(--green); }
+    .status-error   { background: #f0e8e8; color: var(--red);   border-left: 3px solid var(--red); }
+    .status-info    { background: #ede8df; color: #7a6a50;      border-left: 3px solid var(--gold); }
+
+    /* ── WORD CARDS ── */
+    .word-card {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 10px;
+      display: grid;
+      grid-template-columns: 1fr auto;
+      align-items: center;
+      gap: 8px;
+      box-shadow: 0 1px 6px rgba(0,0,0,0.05);
+    }
+
+    .word-card-main {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) minmax(0,45%);
+      column-gap: 14px;
+      align-items: start;
+      min-width: 0;
+    }
+
+    .word-left  { min-width: 0; }
+    .word-right { min-width: 0; }
+
+    .word-en {
+      font-size: 16px;
+      font-weight: 700;
+      color: var(--ink);
+      letter-spacing: 0.2px;
+      word-break: break-word;
+    }
+
+    .word-pos {
+      display: inline-block;
+      font-size: 10px;
+      background: var(--gold-light);
+      color: #6a4a00;
+      border-radius: 4px;
+      padding: 1px 6px;
+      margin-left: 5px;
+      font-weight: 600;
+      vertical-align: middle;
+    }
+
+    .word-tag {
+      display: inline-block;
+      font-size: 10px;
+      background: var(--gold-light);
+      color: #6a4a00;
+      border-radius: 4px;
+      padding: 1px 7px;
+      margin-left: 7px;
+      font-weight: 600;
+      vertical-align: middle;
+    }
+
+    .word-pron {
+      font-size: 11px;
+      color: var(--ink2);
+      margin-top: 2px;
+      font-style: normal;
+      letter-spacing: 0.3px;
+    }
+
+    .word-zh {
+      font-size: 13px;
+      color: var(--ink2);
+      line-height: 1.5;
+      transition: filter 0.3s;
+      padding-top: 2px;
+    }
+    .word-zh.hidden { filter: blur(5px); user-select: none; }
+
+    .word-meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px; margin-top: 4px; }
+
+    .word-error { font-size: 11px; color: var(--red); }
+
+    .word-resource {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      font-size: 10px;
+      color: var(--blue);
+      background: #e4ecf2;
+      border-radius: 4px;
+      padding: 1px 6px;
+      white-space: nowrap;
+    }
+
+    /* ── QUIZ ── */
+    .quiz-timer {
+      font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
+      font-size: 42px;
+      color: var(--gold);
+      text-align: center;
+      letter-spacing: 2px;
+    }
+    .quiz-timer.urgent { color: var(--red); animation: pulse 0.9s infinite; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50%       { opacity: 0.45; }
+    }
+
+    .quiz-progress-bar-wrap {
+      background: var(--border);
+      border-radius: 4px;
+      height: 4px;
+      margin-top: 8px;
+      overflow: hidden;
+    }
+
+    .quiz-progress-bar {
+      background: var(--gold);
+      height: 100%;
+      border-radius: 4px;
+      transition: width 0.3s ease;
+    }
+
+    .quiz-progress { font-size: 12px; color: var(--ink2); text-align: center; margin-top: 6px; }
+
+    .quiz-question {
+      font-size: 17px;
+      font-weight: 700;
+      text-align: center;
+      color: var(--ink);
+      line-height: 1.5;
+      margin: 8px 0 4px;
+    }
+
+    .quiz-sub { font-size: 12px; color: var(--ink2); text-align: center; margin-bottom: 16px; }
+
+    .choices {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .choice-btn {
+      background: var(--surface);
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 10px;
+      font-family: inherit;
+      font-size: 13px;
+      color: var(--ink);
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+      line-height: 1.5;
+      min-height: 60px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .choice-btn:hover:not(:disabled) { border-color: var(--gold); background: #fffbf0; }
+    .choice-btn.correct { border-color: var(--green); background: #e8f0ec; color: var(--green); font-weight: 600; }
+    .choice-btn.wrong   { border-color: var(--red);   background: #f0e8e8; color: var(--red); }
+    .choice-btn:disabled { cursor: default; }
+
+    .quiz-feedback { margin-top: 12px; font-size: 13px; text-align: center; min-height: 20px; }
+
+    /* ── RESULTS ── */
+    .result-stat {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 14px;
+    }
+    .result-stat:last-child { border-bottom: none; }
+    .val { font-weight: 700; font-size: 20px; }
+    .val.good { color: var(--green); }
+    .val.bad  { color: var(--red); }
+
+    .wrong-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border);
+      font-size: 13px;
+      gap: 8px;
+    }
+    .wrong-item:last-child { border-bottom: none; }
+    .wrong-item .zh { color: var(--ink2); font-size: 12px; margin-top: 2px; }
+
+    /* ── LOADER ── */
+    .loader {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid rgba(255,255,255,0.35);
+      border-top-color: white;
+      border-radius: 50%;
+      animation: spin 0.65s linear infinite;
+      flex-shrink: 0;
+    }
+    .loader.dark { border-color: rgba(0,0,0,0.15); border-top-color: var(--ink); }
+
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── MISC ── */
+    .divider { height: 1px; background: var(--border); margin: 14px 0; }
+
+    .settings-toggle {
+      font-size: 12px;
+      color: var(--ink2);
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      text-decoration: underline;
+      font-family: inherit;
+    }
+
+    #apikey-section { display: none; margin-top: 12px; }
+
+    .number-row { display: flex; align-items: center; gap: 10px; }
+    .number-row input { width: 90px; text-align: center; }
+
+    .empty-state {
+      text-align: center;
+      color: var(--ink2);
+      padding: 32px 0;
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .tag-filter-row {
+      display: flex;
+      gap: 6px;
+      flex-wrap: wrap;
+      margin-top: 10px;
+    }
+
+    .tag-chip {
+      font-size: 11px;
+      padding: 3px 10px;
+      border-radius: 20px;
+      border: 1.5px solid var(--border);
+      background: var(--bg);
+      color: var(--ink2);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .tag-chip.active { background: var(--ink); color: white; border-color: var(--ink); }
+
+    .resource-chip {
+      font-size: 11px;
+      padding: 3px 8px 3px 10px;
+      border-radius: 20px;
+      border: 1.5px solid #c2d4e0;
+      background: #edf3f7;
+      color: var(--blue);
+      cursor: pointer;
+      transition: all 0.15s;
+      font-weight: 500;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .resource-chip.active { background: var(--blue); color: white; border-color: var(--blue); }
+    .resource-chip.active .chip-count { background: rgba(255,255,255,0.25); color: white; }
+
+    .chip-count {
+      font-size: 10px;
+      font-weight: 600;
+      background: rgba(79,111,135,0.12);
+      color: var(--blue);
+      border-radius: 10px;
+      padding: 0 5px;
+      line-height: 16px;
+    }
+
+    /* ── BANK ── */
+    .bank-controls {
+      display: flex;
+      gap: 8px;
+      align-items: center;
+      margin-bottom: 14px;
+    }
+    .bank-controls input { flex: 1; }
+
+    /* ── CONFIRM DIALOG ── */
+    .overlay {
+      display: none;
+      position: fixed; inset: 0;
+      background: rgba(0,0,0,0.4);
+      z-index: 200;
+      align-items: center;
+      justify-content: center;
+      padding: 24px;
+    }
+    .overlay.show { display: flex; }
+    .dialog {
+      background: var(--surface);
+      border-radius: var(--radius);
+      padding: 24px;
+      width: 100%;
+      max-width: 340px;
+      box-shadow: 0 8px 40px rgba(0,0,0,0.2);
+    }
+    .dialog h3 { font-size: 16px; margin-bottom: 8px; }
+    .dialog p  { font-size: 13px; color: var(--ink2); margin-bottom: 18px; }
+    .dialog .btn-row { margin-top: 0; }
+
+    /* ── BACKUP REMINDER BANNER ── */
+    .reminder-banner {
+      display: none;
+      background: #f0ebe0;
+      border-bottom: 1px solid #d8ceb8;
+      padding: 10px 18px;
+      font-size: 13px;
+      color: #6a5a3a;
+      align-items: center;
+      gap: 10px;
+    }
+    .reminder-banner.show { display: flex; }
+    .reminder-banner span { flex: 1; line-height: 1.5; }
+    .reminder-dismiss {
+      background: none; border: none;
+      font-size: 18px; color: #9a8a6a;
+      cursor: pointer; padding: 0; line-height: 1;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-row">
+    <div>
+      <div class="app-title">📖 WordVault</div>
+      <div class="word-count-badge" id="global-count">載入中…</div>
+    </div>
+  </div>
+  <nav class="nav">
+    <button class="nav-btn active" onclick="showScreen('import', this)">📥 匯入</button>
+    <button class="nav-btn" onclick="showScreen('study', this)">📚 背誦</button>
+    <button class="nav-btn" onclick="showScreen('quiz', this)">🎯 考驗</button>
+    <button class="nav-btn" onclick="showScreen('bank', this)">🗂 單字庫</button>
+  </nav>
+</header>
+
+<!-- Backup reminder banner -->
+<div class="reminder-banner" id="reminder-banner">
+  <span id="reminder-msg">⏰ 備份提醒</span>
+  <button class="reminder-dismiss" onclick="dismissReminder()" title="關閉">×</button>
+</div>
+
+<main>
+
+  <!-- ══════════════ IMPORT ══════════════ -->
+  <section class="screen active" id="screen-import">
+
+    <div class="card">
+      <div class="section-title">匯入單字清單</div>
+
+      <!-- CSV file upload -->
+      <input type="file" id="csv-file-input" accept=".csv,.txt" style="display:none" onchange="handleCsvFile(this)" />
+      <button class="btn btn-outline" style="width:100%;margin-bottom:12px;" onclick="document.getElementById('csv-file-input').click()">
+        📂 上傳 CSV 檔案
+      </button>
+
+      <div style="font-size:11px;color:var(--ink2);margin-bottom:10px;line-height:1.8;">
+        <strong>支援兩種格式（自動判斷）：</strong><br>
+        ① CSV 含翻譯：<code>Word, Translation, Resource</code>（首行標題自動略過）<br>
+        ② 純單字清單：每行 <code>英文單字, 標籤, #resource1, #resource2…</code>（標籤/來源可省略，來源可多個）
+      </div>
+
+      <textarea id="import-input" placeholder="— 貼上 CSV 或純文字清單 —&#10;&#10;critter, 小動物；生物, #sloth_philosophy&#10;moth, 蛾；出蛀蟲, #sloth_philosophy&#10;&#10;— 或純單字清單 —&#10;&#10;ephemeral, adj&#10;resilience, n"></textarea>
+      <label style="margin-top:10px;">📎 來源 Resource（選填，套用至本次全部匯入；CSV 第三欄可個別覆蓋）</label>
+      <input type="text" id="import-resource" placeholder="例：GRE 5000、Unit 3 課本、#sloth_philosophy…" />
+      <div class="btn-row">
+        <button class="btn btn-primary" onclick="importWords()">📥 匯入</button>
+        <button class="btn btn-outline" onclick="document.getElementById('import-input').value=''">清空輸入</button>
+      </div>
+      <div id="import-status"></div>
+    </div>
+
+    <div class="card">
+      <div class="section-title">✨ AI 批次翻譯</div>
+      <p style="font-size:13px;color:var(--ink2);margin-bottom:14px;line-height:1.6;">
+        使用 <strong>Groq AI</strong> 批次填入中文解釋、詞性、發音。
+      </p>
+      <button class="btn btn-gold" onclick="batchTranslate()" id="translate-btn">✨ 開始 AI 翻譯</button>
+      <div id="translate-status"></div>
+
+      <div class="divider"></div>
+      <button class="settings-toggle" onclick="toggleApiKey()">⚙️ 設定 Groq API Key</button>
+      <div id="apikey-section">
+        <div id="apikey-saved-row" style="display:none;margin-top:10px;font-size:13px;color:var(--green);display:flex;align-items:center;gap:8px;">
+          <span>● Groq Key 已設定（儲存於本機）</span>
+          <button onclick="clearApiKey()" style="font-size:11px;color:var(--ink2);background:none;border:none;cursor:pointer;text-decoration:underline;padding:0;">清除</button>
+        </div>
+        <div id="apikey-input-row" style="margin-top:10px;">
+          <label>輸入 Groq API Key（儲存後不需再輸入）</label>
+          <div style="display:flex;gap:8px;margin-top:5px;">
+            <input type="password" id="api-key-input" placeholder="gsk_…" style="flex:1;" />
+            <button class="btn btn-primary btn-sm" onclick="saveApiKey()">儲存</button>
+          </div>
+          <p style="font-size:11px;color:var(--ink2);margin-top:6px;line-height:1.6;">
+            Key 儲存於瀏覽器本機（LocalStorage），不會上傳。<br>
+            免費申請：<a href="https://console.groq.com" target="_blank" style="color:var(--blue)">console.groq.com</a>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- Backup card -->
+    <div class="card">
+      <div class="section-title">💾 備份與還原</div>
+
+      <p style="font-size:13px;color:var(--ink2);margin-bottom:14px;line-height:1.6;">
+        單字資料存在瀏覽器本地，建議定期匯出備份以防遺失。
+      </p>
+
+      <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px;">匯出</div>
+      <div class="btn-row" style="margin-top:0;">
+        <button class="btn btn-primary" onclick="exportJSON()">⬇ 匯出 JSON 備份</button>
+        <button class="btn btn-outline" onclick="exportCSV()">⬇ 匯出 CSV</button>
+      </div>
+
+      <div class="divider"></div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px;">還原</div>
+      <input type="file" id="restore-file-input" accept=".json,.csv" style="display:none" onchange="restoreBackup(this)" />
+      <button class="btn btn-outline" style="width:100%;" onclick="document.getElementById('restore-file-input').click()">
+        ⬆ 從備份檔案還原
+      </button>
+      <p style="font-size:11px;color:var(--ink2);margin-top:6px;">支援 JSON 備份檔，或含翻譯的 CSV（Word, Translation, Resource）。不會覆蓋已有單字，重複自動略過。</p>
+      <div id="restore-status"></div>
+
+      <div class="divider"></div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px;">📱 跨裝置同步（剪貼簿）</div>
+      <p style="font-size:12px;color:var(--ink2);margin-bottom:10px;line-height:1.6;">
+        Mac 複製 → iPhone Safari 貼上還原，無需存檔。
+      </p>
+      <div class="btn-row" style="margin-top:0;">
+        <button class="btn btn-primary btn-sm" onclick="copyToClipboard()">📋 複製備份到剪貼簿</button>
+        <button class="btn btn-outline btn-sm" onclick="pasteFromClipboard()">📋 從剪貼簿還原</button>
+      </div>
+      <div id="clipboard-status"></div>
+
+      <div class="divider"></div>
+
+      <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:6px;">☁️ GitHub Gist 雙向同步</div>
+      <div id="gist-status-row" style="font-size:12px;color:var(--ink2);margin-bottom:10px;"></div>
+
+      <div id="gist-sync-btns" style="display:none;">
+        <div class="btn-row" style="margin-top:0;">
+          <button class="btn btn-primary" onclick="syncToGist()">☁️ 推送到雲端</button>
+          <button class="btn btn-outline" onclick="syncFromGist()">☁️ 從雲端讀取</button>
+        </div>
+        <p style="font-size:11px;color:var(--ink2);margin-top:6px;line-height:1.6;">
+          推送 = 上傳本機全部資料覆蓋雲端。從雲端讀取 = 合併雲端資料到本機（不刪除本機已有的單字）。
+        </p>
+      </div>
+
+      <button class="settings-toggle" onclick="toggleGistSetup()">⚙️ 設定 GitHub Token</button>
+      <div id="gist-setup-section" style="display:none;margin-top:10px;">
+        <label>GitHub Personal Access Token</label>
+        <div style="display:flex;gap:8px;margin-top:5px;">
+          <input type="password" id="gist-token-input" placeholder="ghp_…" style="flex:1;" />
+          <button class="btn btn-primary btn-sm" onclick="saveGistToken()">儲存</button>
+        </div>
+        <div id="gist-id-row" style="margin-top:10px;display:none;">
+          <div style="font-size:11px;color:var(--ink2);margin-bottom:5px;">Gist ID（第一次同步後自動產生）</div>
+          <div style="display:flex;gap:6px;align-items:center;">
+            <span id="gist-id-label" style="font-family:monospace;font-size:11px;word-break:break-all;flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;"></span>
+            <button class="btn btn-outline btn-sm" onclick="copyGistId()" title="複製 Gist ID">📋</button>
+          </div>
+          <button onclick="clearGistSetup()" style="margin-top:6px;font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;text-decoration:underline;padding:0;">清除全部設定</button>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label style="font-size:11px;font-weight:600;color:var(--ink2);">📱 iPhone 設定：輸入 Gist ID（從 Mac 複製）</label>
+          <div style="display:flex;gap:8px;margin-top:5px;">
+            <input type="text" id="gist-id-input" placeholder="貼上 Gist ID…" style="flex:1;font-size:12px;" />
+            <button class="btn btn-primary btn-sm" onclick="saveGistId()">套用</button>
+          </div>
+          <p style="font-size:11px;color:var(--ink2);margin-top:5px;line-height:1.6;">
+            iPhone 只需貼入 Gist ID，不需要推送。套用後直接按「☁️ 從雲端讀取」即可。
+          </p>
+        </div>
+        <p style="font-size:11px;color:var(--ink2);margin-top:8px;line-height:1.9;">
+          ① 前往 <a href="https://github.com/settings/tokens/new" target="_blank" style="color:var(--blue)">github.com → Settings → Developer settings → Personal access tokens → Tokens (classic)</a><br>
+          ② Note 填 <code>WordVault</code>，Expiration 選 <code>No expiration</code><br>
+          ③ 只勾選 <code>gist</code>，拉到最底點 <strong>Generate token</strong><br>
+          ④ 複製 <code>ghp_…</code> 開頭的 token 貼到上方，按「儲存」<br>
+          ⑤ 第一次按「推送到雲端」會自動建立 Gist
+        </p>
+      </div>
+      <div id="gist-sync-status"></div>
+
+      <div class="divider"></div>
+      <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px;">⏰ 備份提醒</div>
+      <div style="display:flex;align-items:center;gap:10px;">
+        <select id="reminder-interval" onchange="saveReminderSetting()" style="flex:1;">
+          <option value="0">不提醒</option>
+          <option value="30">每個月提醒</option>
+          <option value="90">每季提醒</option>
+        </select>
+        <span style="font-size:12px;color:var(--ink2);" id="last-backup-label">尚未備份</span>
+      </div>
+    </div>
+
+  </section>
+
+  <!-- ══════════════ STUDY ══════════════ -->
+  <section class="screen" id="screen-study">
+
+    <div class="card">
+      <div class="section-title">列表背誦設定</div>
+      <div class="number-row">
+        <input type="number" id="study-n" placeholder="數量 N" min="1" />
+        <button class="btn btn-primary" onclick="startStudy(false)">🎲 隨機抽 N</button>
+        <button class="btn btn-outline" onclick="startStudy(true)">全部</button>
+      </div>
+
+      <div style="margin-top:12px;display:flex;flex-wrap:wrap;gap:12px;">
+        <label style="margin:0;font-size:13px;display:flex;align-items:center;gap:5px;cursor:pointer;">
+          <input type="checkbox" id="show-zh-toggle" checked onchange="renderStudyList()">
+          顯示中文
+        </label>
+        <label style="margin:0;font-size:13px;display:flex;align-items:center;gap:5px;cursor:pointer;">
+          <input type="checkbox" id="sort-error-toggle">
+          優先顯示常錯
+        </label>
+        <label style="margin:0;font-size:13px;display:flex;align-items:center;gap:5px;cursor:pointer;">
+          <input type="checkbox" id="autoread-toggle">
+          自動朗讀
+        </label>
+      </div>
+
+      <div id="study-tag-filter" class="tag-filter-row" style="display:none;"></div>
+      <div id="study-resource-filter" class="tag-filter-row" style="display:none;"></div>
+    </div>
+
+    <div id="study-list"></div>
+    <div id="study-quiz-btn-row" style="display:none;padding:4px 0 20px;">
+      <button class="btn btn-gold" style="width:100%;" onclick="quizFromStudy()">🎯 考驗這批單字</button>
+    </div>
+  </section>
+
+  <!-- ══════════════ QUIZ ══════════════ -->
+  <section class="screen" id="screen-quiz">
+
+    <div id="quiz-setup">
+      <div class="card">
+        <div class="section-title">測驗設定</div>
+
+        <label>測驗時間（分鐘）</label>
+        <input type="number" id="quiz-minutes" value="20" min="1" max="120" style="width:110px;" />
+
+        <div style="margin-top:12px;">
+          <label>出題方向</label>
+          <select id="quiz-mode">
+            <option value="en2zh">看英文單字 → 選中文解釋</option>
+            <option value="zh2en">看中文解釋 → 選英文單字</option>
+          </select>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label>篩選來源 Resource（不選＝全部）</label>
+          <div id="quiz-resource-filter" class="tag-filter-row"></div>
+        </div>
+
+        <div style="margin-top:12px;">
+          <label>出題標籤（不選＝全部）</label>
+          <div id="quiz-tag-filter" class="tag-filter-row"></div>
+        </div>
+
+        <div class="btn-row" style="margin-top:16px;">
+          <button class="btn btn-gold" onclick="startQuiz()">🎯 開始測驗</button>
+        </div>
+        <div id="quiz-setup-status"></div>
+      </div>
+    </div>
+
+    <div id="quiz-running" style="display:none;">
+      <div class="card" style="text-align:center;padding-bottom:14px;">
+        <div id="quiz-from-study-badge" style="display:none;font-size:11px;color:var(--blue);background:#e4ecf2;border-radius:6px;padding:3px 10px;margin-bottom:8px;display:inline-block;">📚 背誦模式直連考驗</div>
+        <div class="quiz-timer" id="quiz-timer">—:——</div>
+        <div class="quiz-progress-bar-wrap">
+          <div class="quiz-progress-bar" id="quiz-bar" style="width:0%"></div>
+        </div>
+        <div class="quiz-progress" id="quiz-progress">準備中…</div>
+      </div>
+      <div class="card">
+        <div class="quiz-question" id="quiz-question">—</div>
+        <div class="quiz-sub" id="quiz-sub"></div>
+        <div class="choices" id="quiz-choices"></div>
+        <div class="quiz-feedback" id="quiz-feedback"></div>
+      </div>
+    </div>
+
+    <div id="quiz-results" style="display:none;">
+      <div class="card">
+        <div class="section-title">測驗結果</div>
+        <div id="result-stats"></div>
+      </div>
+      <div class="card" id="wrong-card" style="display:none;">
+        <div class="section-title">錯題複習 🔁</div>
+        <div id="wrong-list"></div>
+      </div>
+      <div class="btn-row" style="padding-bottom:20px;" id="quiz-result-btns">
+        <button class="btn btn-primary" onclick="resetQuiz()">🔄 再來一次</button>
+        <button class="btn btn-outline" onclick="showScreen('study', document.querySelectorAll('.nav-btn')[1])">📚 背誦錯題</button>
+      </div>
+    </div>
+
+  <!-- ══════════════ WORD BANK ══════════════ -->
+  <section class="screen" id="screen-bank">
+    <div class="bank-controls">
+      <input type="text" id="bank-search" placeholder="🔍 搜尋單字 / 中文…" oninput="renderBank()" />
+      <button class="btn btn-outline btn-sm" onclick="confirmDeleteSearchResults()" title="刪除搜尋結果">🗑</button>
+    </div>
+    <div id="bank-resource-filter" class="tag-filter-row" style="margin-bottom:8px;display:none;"></div>
+    <div id="bank-action-bar" style="display:none;margin-bottom:12px;">
+      <button class="btn btn-danger btn-sm" onclick="confirmDeleteByResource()" id="delete-resource-btn">
+        🗑 刪除選取來源的全部單字
+      </button>
+      <span id="delete-resource-count" style="font-size:12px;color:var(--ink2);margin-left:8px;"></span>
+    </div>
+    <div id="bank-list"></div>
+  </section>
+
+</main>
+
+<!-- Confirm Dialog -->
+<div class="overlay" id="confirm-overlay">
+  <div class="dialog">
+    <h3 id="confirm-title">確認操作</h3>
+    <p id="confirm-msg">確定嗎？</p>
+    <div class="btn-row">
+      <button class="btn btn-danger" onclick="confirmAction()">確定</button>
+      <button class="btn btn-outline" onclick="closeConfirm()">取消</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════
+//  DATA LAYER
+// ═══════════════════════════════════════════
+const STORAGE_KEY = 'wordvault_v1';
+
+function loadWords() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
+  catch { return []; }
+}
+
+function saveWords(words) {
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(words));
+  updateGlobalCount();
+}
+
+function updateGlobalCount() {
+  const words = loadWords();
+  const noZh = words.filter(w => !w.chinese).length;
+  document.getElementById('global-count').textContent =
+    `共 ${words.length} 個單字　${noZh ? `⚠ 未翻譯 ${noZh}` : '✓ 全部已翻譯'}`;
+}
+
+// ═══════════════════════════════════════════
+//  NAVIGATION
+// ═══════════════════════════════════════════
+function showScreen(name, btn) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('screen-' + name).classList.add('active');
+  if (btn) btn.classList.add('active');
+  localStorage.setItem('wordvault_last_tab', name);
+  if (name === 'bank') {
+    document.getElementById('bank-list').innerHTML =
+      '<div class="empty-state" style="padding:40px 0;">⏳ 載入中…</div>';
+    setTimeout(() => {
+      try { renderBankResourceFilter(); } catch(e) { console.error('filter err', e); }
+      try { renderBank(); } catch(e) {
+        document.getElementById('bank-list').innerHTML =
+          '<div class="empty-state">顯示錯誤，請重新整理。</div>';
+      }
+    }, 60);
+  }
+  if (name === 'quiz') { renderQuizResourceFilter(); renderQuizTagFilter(); }
+  if (name === 'study') { renderStudyTagFilter(); renderStudyResourceFilter(); }
+}
+
+// ═══════════════════════════════════════════
+//  IMPORT
+// ═══════════════════════════════════════════
+
+// RFC-4180 compliant CSV parser
+function parseCSV(text) {
+  const rows = [];
+  let col = '', row = [], inQuote = false;
+  for (let i = 0; i < text.length; i++) {
+    const ch = text[i], next = text[i + 1];
+    if (inQuote) {
+      if (ch === '"' && next === '"') { col += '"'; i++; }       // escaped quote
+      else if (ch === '"')           { inQuote = false; }        // end quote
+      else                           { col += ch; }
+    } else {
+      if      (ch === '"')  { inQuote = true; }
+      else if (ch === ',')  { row.push(col.trim()); col = ''; }
+      else if (ch === '\n' || (ch === '\r' && next === '\n')) {
+        if (ch === '\r') i++;
+        row.push(col.trim()); col = '';
+        if (row.some(c => c)) rows.push(row);   // skip blank lines
+        row = [];
+      } else { col += ch; }
+    }
+  }
+  if (col || row.length) { row.push(col.trim()); if (row.some(c => c)) rows.push(row); }
+  return rows;
+}
+
+// Detect if this looks like the pre-translated CSV (col B = Chinese translation)
+// Heuristic: first row is a header containing "word" or "translation"
+function isPreTranslatedCSV(rows) {
+  if (rows.length < 2) return false;
+  const header = rows[0].map(h => h.toLowerCase());
+  return header.some(h => h.includes('word') || h.includes('translation') || h.includes('definition'));
+}
+
+function handleCsvFile(input) {
+  const file = input.files[0];
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    document.getElementById('import-input').value = e.target.result;
+    showStatus('import-status', `📂 已載入「${file.name}」，點「匯入」繼續`, 'info');
+  };
+  reader.readAsText(file, 'UTF-8');
+  input.value = '';   // reset so same file can be re-selected
+}
+
+// Append multiple resource tags to an existing word entry, deduplicating
+function appendResources(entry, newResources) {
+  if (!newResources || newResources.length === 0) return;
+  const existing = (entry.resource || '').split(',').map(r => r.trim()).filter(Boolean);
+  for (const r of newResources) {
+    if (r && !existing.includes(r)) existing.push(r);
+  }
+  entry.resource = existing.join(',');
+}
+
+// Lowercase first letter unless the word looks like a proper noun or acronym.
+// Rules:
+//   - ALL CAPS (≥2 chars): keep  → UNESCO, DNA
+//   - Capital mid-word (not first): keep  → iPhone, McCabe, New York
+//   - First letter only capitalised: lowercase  → memo auto-cap artefact
+function normalizeWordCase(word) {
+  if (!word || word.length === 0) return word;
+  // All caps acronym (allow hyphen/slash): keep
+  if (/^[A-Z][A-Z0-9\-\/]{1,}$/.test(word)) return word;
+  // Has capital after the first character: proper noun / brand → keep
+  if (/[A-Z]/.test(word.slice(1))) return word;
+  // Only first letter capitalised → lowercase it
+  return word[0].toLowerCase() + word.slice(1);
+}
+
+// Strip leading pos prefix from Chinese when pos badge already shows it
+// e.g. "adj. 沉思的" → "沉思的" when pos = "adj."
+function stripPosPrefix(chinese, pos) {
+  if (!chinese || !pos) return chinese;
+  return chinese.replace(/^[a-z\/\-]+\.\s*/i, '');
+}
+
+function importWords() {
+  const raw = document.getElementById('import-input').value.trim();
+  if (!raw) { showStatus('import-status', '請先貼上內容或上傳 CSV 檔案', 'error'); return; }
+
+  const CJK_RE = /[\u4e00-\u9fff\u3400-\u4dbf]/;
+  const batchResource = document.getElementById('import-resource').value.trim();
+  const existingWords = loadWords();
+  const existingSet   = new Set(existingWords.map(w => w.word.toLowerCase()));
+
+  let added = 0, skipped = 0, withTranslation = 0;
+
+  // ── Try CSV parser first ──────────────────────────────────
+  const rows = parseCSV(raw);
+  const isCsv = isPreTranslatedCSV(rows);
+
+  if (isCsv) {
+    // Pre-translated CSV: Word | Translation | Resource
+    // Skip header row (row[0])
+    for (let i = 1; i < rows.length; i++) {
+      const [wordRaw = '', chineseRaw = '', ...resCols] = rows[i];
+      const word    = normalizeWordCase(wordRaw.trim());
+      const chinese = chineseRaw.trim();
+      // All columns from index 2 onwards are treated as resource tags
+      const lineResources = resCols.map(r => r.trim()).filter(Boolean);
+      const resources = lineResources.length ? lineResources : (batchResource ? [batchResource] : []);
+      if (!word) continue;
+
+      if (existingSet.has(word.toLowerCase())) {
+        const ex = existingWords.find(w => w.word.toLowerCase() === word.toLowerCase());
+        if (ex) appendResources(ex, resources);
+        skipped++;
+      } else {
+        existingWords.push({ word, tag: '', resource: resources.join(','), chinese, errorCount: 0, pronunciation: '', pos: '' });
+        existingSet.add(word.toLowerCase());
+        added++;
+        if (chinese) withTranslation++;
+      }
+    }
+  } else {
+    // ── Simple line-by-line format: word, tag/chinese, resource(s) ──────
+    const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+    for (const line of lines) {
+      const parts = parseCSV(line)[0] || [];
+      const word  = normalizeWordCase((parts[0] || '').trim());
+      const col1  = (parts[1] || '').trim();
+
+      // Auto-detect: if col1 contains Chinese → treat as translation, not tag
+      let tag = '', chinese = '';
+      if (CJK_RE.test(col1)) {
+        chinese = col1;   // col1 is a translation
+      } else {
+        tag = col1;       // col1 is a tag/pos label
+      }
+
+      // Everything from col 2 onwards = resource tags
+      const lineResources = parts.slice(2).map(r => r.trim()).filter(Boolean);
+      const resources = lineResources.length ? lineResources : (batchResource ? [batchResource] : []);
+      if (!word) continue;
+
+      if (existingSet.has(word.toLowerCase())) {
+        const ex = existingWords.find(w => w.word.toLowerCase() === word.toLowerCase());
+        if (ex) {
+          appendResources(ex, resources);
+          // Also fill in chinese if the existing entry lacks it
+          if (!ex.chinese && chinese) { ex.chinese = chinese; }
+        }
+        skipped++;
+      } else {
+        existingWords.push({ word, tag, resource: resources.join(','), chinese, errorCount: 0, pronunciation: '', pos: '' });
+        existingSet.add(word.toLowerCase());
+        added++;
+        if (chinese) withTranslation++;
+      }
+    }
+  }
+
+  saveWords(existingWords);
+  document.getElementById('import-input').value = '';
+
+  const extra = isCsv && withTranslation
+    ? `（含 ${withTranslation} 筆中文翻譯，無需再 AI 翻譯）`
+    : '';
+  showStatus('import-status',
+    `✅ 匯入 ${added} 個${skipped ? `，跳過重複 ${skipped} 個` : ''} ${extra}`,
+    'success'
+  );
+}
+
+// ═══════════════════════════════════════════
+//  AI BATCH TRANSLATE (Groq)
+// ═══════════════════════════════════════════
+const GROQ_KEY_STORAGE = 'wordvault_groq_key';
+
+function getApiKey() {
+  return localStorage.getItem(GROQ_KEY_STORAGE) || '';
+}
+
+function saveApiKey() {
+  const val = document.getElementById('api-key-input').value.trim();
+  if (!val) { alert('請輸入 API Key'); return; }
+  localStorage.setItem(GROQ_KEY_STORAGE, val);
+  document.getElementById('api-key-input').value = '';
+  refreshApiKeyUI();
+  showStatus('translate-status', '✅ Groq API Key 已儲存', 'success');
+}
+
+function clearApiKey() {
+  if (!confirm('確定要清除儲存的 Groq API Key？')) return;
+  localStorage.removeItem(GROQ_KEY_STORAGE);
+  refreshApiKeyUI();
+}
+
+function refreshApiKeyUI() {
+  const hasKey = !!getApiKey();
+  document.getElementById('apikey-saved-row').style.display = hasKey ? 'flex' : 'none';
+  document.getElementById('apikey-input-row').style.display = hasKey ? 'none' : 'block';
+}
+
+function toggleApiKey() {
+  const el = document.getElementById('apikey-section');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+// Attempt to repair truncated JSON by closing open structures
+function repairJSON(str) {
+  // Remove trailing comma before repair
+  let s = str.replace(/,\s*$/, '').trim();
+  // Count open braces/brackets
+  let braces = 0, brackets = 0, inStr = false, escape = false;
+  for (const ch of s) {
+    if (escape)       { escape = false; continue; }
+    if (ch === '\\')  { escape = true; continue; }
+    if (ch === '"')   { inStr = !inStr; continue; }
+    if (inStr) continue;
+    if (ch === '{') braces++;
+    if (ch === '}') braces--;
+    if (ch === '[') brackets++;
+    if (ch === ']') brackets--;
+  }
+  // Close any open string
+  if (inStr) s += '"';
+  // Close any partial last property (e.g. "key": {)
+  if (braces > 1) s += '}'.repeat(braces - 1);  // close inner objects first
+  if (brackets > 0) s += ']'.repeat(brackets);
+  if (braces > 0) s += '}'.repeat(Math.max(0, braces - (braces > 1 ? braces - 1 : 0)));
+  // Re-count and close root
+  let open = 0;
+  for (const ch of s) { if (ch === '{') open++; if (ch === '}') open--; }
+  if (open > 0) s += '}'.repeat(open);
+  return s;
+}
+
+async function batchTranslate() {
+  const words = loadWords();
+  const needFull  = words.filter(w => !w.chinese);               // need translation + pos + pron
+  const needPos   = words.filter(w => w.chinese && !w.pos);      // have Chinese, missing pos/pron
+  const need      = [...needFull, ...needPos];
+
+  if (need.length === 0) {
+    showStatus('translate-status', '所有單字都已有翻譯與詞性 ✓', 'success');
+    return;
+  }
+
+  const apiKey = getApiKey();
+  if (!apiKey) {
+    showStatus('translate-status', '請先展開設定並儲存 Groq API Key', 'error');
+    document.getElementById('apikey-section').style.display = 'block';
+    return;
+  }
+
+  const btn = document.getElementById('translate-btn');
+  btn.innerHTML = '<span class="loader"></span> 翻譯中…';
+  btn.disabled = true;
+  const desc = needFull.length && needPos.length
+    ? `${needFull.length} 個待翻譯 + ${needPos.length} 個補詞性`
+    : needFull.length ? `${needFull.length} 個待翻譯`
+    : `${needPos.length} 個補詞性／發音`;
+  showStatus('translate-status', `⏳ 處理中（${desc}）…`, 'info');
+
+  const CHUNK = 15;   // smaller = fewer tokens per request, less likely to hit TPM limit
+  let translated = 0;
+
+  // Groq rate-limit aware fetch: auto-retry on 429
+  async function groqFetch(body) {
+    const MAX_RETRIES = 4;
+    for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+      const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+        body: JSON.stringify(body)
+      });
+
+      if (resp.status === 429) {
+        const err = await resp.json().catch(() => ({}));
+        const msg = err.error?.message || '';
+        // Parse suggested wait time from Groq error message (e.g. "try again in 8.51s")
+        const match = msg.match(/try again in ([\d.]+)s/i);
+        const waitMs = match ? Math.ceil(parseFloat(match[1]) * 1000) + 500 : (attempt + 1) * 12000;
+        const waitSec = Math.round(waitMs / 1000);
+        showStatus('translate-status',
+          `⏳ Rate limit 已達上限，${waitSec} 秒後自動重試（${translated} / ${need.length} 已完成）…`, 'info');
+        await new Promise(r => setTimeout(r, waitMs));
+        continue;
+      }
+
+      if (!resp.ok) {
+        const err = await resp.json().catch(() => ({}));
+        throw new Error(err.error?.message || `Groq API 錯誤 ${resp.status}`);
+      }
+      return resp;
+    }
+    throw new Error('重試多次仍失敗，請稍後再試');
+  }
+
+  try {
+    for (let i = 0; i < need.length; i += CHUNK) {
+      const chunk = need.slice(i, i + CHUNK);
+      const chunkNeedFull = chunk.filter(w => !w.chinese);
+      const chunkNeedPos  = chunk.filter(w => w.chinese && !w.pos);
+
+      // Build word list — for pos-only words, include existing Chinese to help AI infer pos
+      const wordListStr = chunk.map(w =>
+        w.chinese ? `${w.word} [已有中文：${w.chinese}]` : w.word
+      ).join('\n');
+
+      const systemPrompt = chunkNeedFull.length
+        ? '你是英文字典助理。對於每個輸入的英文單字或片語，回傳一個 JSON 物件，key 是英文單字（與輸入完全一致，不含方括號內容），value 是包含三個欄位的物件：chinese（繁體中文解釋，格式如 "n. 韌性；彈性"）、pos（詞性縮寫，如 n./v./adj./adv./phrase）、pronunciation（美式 IPA，如 /rɪˈzɪliəns/）。只輸出 JSON，不要其他文字。'
+        : '你是英文字典助理。對於每個輸入的英文單字或片語（方括號內是已有的中文供參考），只需補充 pos（詞性縮寫，如 n./v./adj./adv./phrase）和 pronunciation（美式 IPA）。回傳 JSON 物件，key 是英文單字（與輸入完全一致，不含方括號內容），value 是包含 pos 和 pronunciation 兩個欄位的物件。只輸出 JSON，不要其他文字。';
+
+      const resp = await groqFetch({
+        model: 'llama-3.3-70b-versatile',
+        temperature: 0.1,
+        max_tokens: 2000,
+        response_format: { type: 'json_object' },
+        messages: [{
+          role: 'system',
+          content: systemPrompt
+        }, {
+          role: 'user',
+          content: wordListStr
+        }]
+      });
+
+      const data = await resp.json();
+      const raw = data.choices?.[0]?.message?.content || '{}';
+
+      let translations;
+      try {
+        // response_format: json_object should give clean JSON, but still sanitise
+        const clean = raw.replace(/```json|```/g, '').trim();
+        try {
+          translations = JSON.parse(clean);
+        } catch {
+          // Attempt repair for truncated responses
+          translations = JSON.parse(repairJSON(clean));
+        }
+      } catch {
+        // Last resort: extract whatever valid entries exist via regex
+        translations = {};
+        const entryRe = /"([^"]+)"\s*:\s*\{[^}]*"chinese"\s*:\s*"([^"]*)"[^}]*"pos"\s*:\s*"([^"]*)"[^}]*"pronunciation"\s*:\s*"([^"]*)"/g;
+        let m;
+        while ((m = entryRe.exec(raw)) !== null) {
+          translations[m[1]] = { chinese: m[2], pos: m[3], pronunciation: m[4] };
+        }
+        if (Object.keys(translations).length === 0)
+          throw new Error('AI 回應格式錯誤，請重試或縮小批次數量');
+      }
+
+      const allWords = loadWords();
+      for (const w of allWords) {
+        // skip words not in this chunk
+        const inChunk = chunk.find(c => c.word === w.word);
+        if (!inChunk) continue;
+
+        const found = translations[w.word] || translations[w.word.toLowerCase()];
+        if (!found) continue;
+
+        if (!w.chinese) {
+          // Full translation
+          w.chinese       = found.chinese || found;
+          w.pronunciation = found.pronunciation || '';
+          w.pos           = found.pos || '';
+          translated++;
+        } else if (!w.pos) {
+          // Pos-only enrichment — don't overwrite existing Chinese
+          w.pronunciation = found.pronunciation || w.pronunciation || '';
+          w.pos           = found.pos || '';
+          translated++;
+        }
+      }
+      saveWords(allWords);
+
+      if (i + CHUNK < need.length) {
+        showStatus('translate-status', `⏳ 已處理 ${translated} / ${need.length}…`, 'info');
+        await new Promise(r => setTimeout(r, 2000));  // 2s pause to stay within TPM
+      }
+    }
+
+    showStatus('translate-status', `✅ 完成！處理 ${translated} 個單字（翻譯 + 補詞性）`, 'success');
+  } catch (err) {
+    showStatus('translate-status', `❌ ${err.message}`, 'error');
+  } finally {
+    btn.innerHTML = '✨ 開始 AI 翻譯';
+    btn.disabled = false;
+    updateGlobalCount();
+  }
+}
+
+// ═══════════════════════════════════════════
+//  WORD CARD HELPER
+// ═══════════════════════════════════════════
+function resourceChips(w) {
+  return (w.resource || '').split(',')
+    .map(r => cleanStr(r)).filter(Boolean)
+    .map(r => `<span class="word-resource">${escHtml(r)}</span>`).join('');
+}
+
+function wordCardHTML(w, opts = {}) {
+  const { index, showZh = true, showError = false, actions = '' } = opts;
+  const zhId = index !== undefined ? `id="wzh-${index}"` : '';
+  return `
+    <div class="word-card">
+      <div class="word-card-main">
+        <div class="word-left">
+          <div class="word-en">${escHtml(w.word)}${w.pos ? `<span class="word-pos">${escHtml(w.pos)}</span>` : ''}</div>
+          ${w.pronunciation ? `<div class="word-pron">${escHtml(w.pronunciation)}</div>` : ''}
+        </div>
+        <div class="word-right">
+          <div class="word-zh ${showZh ? '' : 'hidden'}" ${zhId}>
+            ${w.chinese ? escHtml(stripPosPrefix(w.chinese, w.pos)) : '<em style="opacity:0.4">未翻譯</em>'}
+          </div>
+        </div>
+        <div class="word-meta">
+          ${resourceChips(w)}
+          ${showError && w.errorCount ? `<span class="word-error">❌ ${w.errorCount} 次</span>` : ''}
+        </div>
+      </div>
+      ${actions ? `<div class="word-card-actions">${actions}</div>` : ''}
+    </div>`;
+}
+
+// ═══════════════════════════════════════════
+//  STUDY MODE
+// ═══════════════════════════════════════════
+let studyWords = [];
+let studySelectedTag = null;
+let studySelectedResources = new Set();
+
+function getAllTags() {
+  const tags = new Set(loadWords().map(w => (w.tag || '').trim()).filter(Boolean));
+  return [...tags].sort();
+}
+
+function getAllResources() {
+  const CJK = /[\u4e00-\u9fff\u3400-\u4dbf]/;
+  const res = new Set();
+  for (const w of loadWords()) {
+    for (const r of (w.resource || '').split(',')) {
+      const clean = cleanStr(r);
+      if (clean && !CJK.test(clean)) res.add(clean);
+    }
+  }
+  return [...res].sort();
+}
+
+function getResourceCounts() {
+  const CJK = /[\u4e00-\u9fff\u3400-\u4dbf]/;
+  const counts = {};
+  for (const w of loadWords()) {
+    for (const r of (w.resource || '').split(',')) {
+      const clean = cleanStr(r);
+      if (clean && !CJK.test(clean)) counts[clean] = (counts[clean] || 0) + 1;
+    }
+  }
+  return counts;
+}
+
+function renderStudyTagFilter() {
+  const tags = getAllTags();
+  const container = document.getElementById('study-tag-filter');
+  if (tags.length === 0) { container.style.display = 'none'; return; }
+  container.style.display = 'flex';
+  container.innerHTML = tags.map(t => `
+    <span class="tag-chip ${studySelectedTag === t ? 'active' : ''}"
+          onclick="studySelectTag('${escJs(t)}')">${t}</span>
+  `).join('');
+}
+
+function renderStudyResourceFilter() {
+  const resources = getAllResources();
+  const counts    = getResourceCounts();
+  const noTagCount = loadWords().filter(w => !cleanStr(w.resource)).length;
+  const container = document.getElementById('study-resource-filter');
+  if (resources.length === 0 && noTagCount === 0) { container.style.display = 'none'; return; }
+  container.style.display = 'flex';
+  const noTagChip = noTagCount > 0 ? `
+    <span class="resource-chip ${studySelectedResources.has('__notag__') ? 'active' : ''}"
+          style="border-style:dashed;"
+          onclick="studyToggleResource('__notag__')">無標籤<span class="chip-count">${noTagCount}</span></span>` : '';
+  container.innerHTML = resources.map(r => `
+    <span class="resource-chip ${studySelectedResources.has(r) ? 'active' : ''}"
+          onclick="studyToggleResource('${escJs(r)}')">${escHtml(r)}<span class="chip-count">${counts[r] || 0}</span></span>
+  `).join('') + noTagChip;
+}
+
+function studySelectTag(tag) {
+  studySelectedTag = studySelectedTag === tag ? null : tag;
+  renderStudyTagFilter();
+}
+
+function studyToggleResource(res) {
+  if (studySelectedResources.has(res)) studySelectedResources.delete(res);
+  else studySelectedResources.add(res);
+  renderStudyResourceFilter();
+}
+
+function startStudy(all = false) {
+  let pool = loadWords();
+
+  if (pool.length === 0) {
+    document.getElementById('study-list').innerHTML =
+      '<div class="empty-state">尚無單字，請先到「匯入」頁面新增。</div>';
+    return;
+  }
+
+  if (studySelectedResources.size > 0) {
+    if (studySelectedResources.has('__notag__')) {
+      const others = new Set([...studySelectedResources].filter(r => r !== '__notag__'));
+      pool = pool.filter(w => {
+        const hasTag = (w.resource || '').split(',').map(r => cleanStr(r)).some(r => r);
+        return !hasTag || (others.size > 0 && (w.resource || '').split(',').map(r => cleanStr(r)).some(r => others.has(r)));
+      });
+    } else {
+      pool = pool.filter(w =>
+        (w.resource || '').split(',').map(r => cleanStr(r)).some(r => studySelectedResources.has(r))
+      );
+    }
+  }
+  if (studySelectedTag)
+    pool = pool.filter(w => w.tag === studySelectedTag);
+
+  if (pool.length === 0) {
+    document.getElementById('study-list').innerHTML =
+      '<div class="empty-state">目前篩選條件下沒有單字，請調整過濾器。</div>';
+    return;
+  }
+
+  const sortByError = document.getElementById('sort-error-toggle').checked;
+  if (sortByError) pool.sort((a, b) => (b.errorCount||0) - (a.errorCount||0));
+  else shuffle(pool);
+
+  if (!all) {
+    const n = parseInt(document.getElementById('study-n').value) || 20;
+    pool = pool.slice(0, n);
+  }
+
+  studyWords = pool;
+  renderStudyList();
+
+  if (document.getElementById('autoread-toggle').checked && pool.length > 0) {
+    setTimeout(() => speak(pool[0].word), 500);
+  }
+}
+
+function renderStudyList() {
+  const showZh = document.getElementById('show-zh-toggle').checked;
+  const container = document.getElementById('study-list');
+
+  if (studyWords.length === 0) {
+    container.innerHTML = '<div class="empty-state">請先點「隨機抽 N」或「全部」開始背誦。</div>';
+    return;
+  }
+
+  container.innerHTML = studyWords.map((w, i) =>
+    wordCardHTML(w, {
+      index: i,
+      showZh,
+      showError: true,
+      actions: `<button class="btn-icon" onclick="speak('${escJs(w.word)}')" title="朗讀">🔊</button>`
+    })
+  ).join('');
+
+  document.getElementById('study-quiz-btn-row').style.display =
+    studyWords.length >= 4 ? 'block' : 'none';
+}
+
+function speak(word) {
+  if (!('speechSynthesis' in window)) { alert('您的瀏覽器不支援語音朗讀'); return; }
+  window.speechSynthesis.cancel();
+  const utt = new SpeechSynthesisUtterance(word);
+  utt.lang = 'en-US';
+  utt.rate = 0.82;
+  utt.pitch = 1;
+  window.speechSynthesis.speak(utt);
+}
+
+// ═══════════════════════════════════════════
+//  QUIZ MODE
+// ═══════════════════════════════════════════
+let quizState = null;
+let quizTimer = null;
+let quizSelectedTags = new Set();
+let quizSelectedResources = new Set();
+
+function renderQuizResourceFilter() {
+  const resources  = getAllResources();
+  const counts     = getResourceCounts();
+  const noTagCount = loadWords().filter(w => !cleanStr(w.resource)).length;
+  const container  = document.getElementById('quiz-resource-filter');
+  if (resources.length === 0 && noTagCount === 0) {
+    container.innerHTML = '<span style="font-size:12px;color:var(--ink2);">（無 Resource）</span>';
+    return;
+  }
+  const noTagChip = noTagCount > 0 ? `
+    <span class="resource-chip ${quizSelectedResources.has('__notag__') ? 'active' : ''}"
+          style="border-style:dashed;"
+          onclick="quizToggleResource('__notag__')">無標籤<span class="chip-count">${noTagCount}</span></span>` : '';
+  container.innerHTML = resources.map(r => `
+    <span class="resource-chip ${quizSelectedResources.has(r) ? 'active' : ''}"
+          onclick="quizToggleResource('${escJs(r)}')">${escHtml(r)}<span class="chip-count">${counts[r] || 0}</span></span>
+  `).join('') + noTagChip;
+}
+
+function renderQuizTagFilter() {
+  const tags = getAllTags();
+  const container = document.getElementById('quiz-tag-filter');
+  if (tags.length === 0) { container.innerHTML = '<span style="font-size:12px;color:var(--ink2);">（無標籤）</span>'; return; }
+  container.innerHTML = tags.map(t => `
+    <span class="tag-chip ${quizSelectedTags.has(t) ? 'active' : ''}"
+          onclick="quizToggleTag('${escJs(t)}')">${t}</span>
+  `).join('');
+}
+
+function quizToggleResource(res) {
+  if (quizSelectedResources.has(res)) quizSelectedResources.delete(res);
+  else quizSelectedResources.add(res);
+  renderQuizResourceFilter();
+}
+
+function quizToggleTag(tag) {
+  if (quizSelectedTags.has(tag)) quizSelectedTags.delete(tag);
+  else quizSelectedTags.add(tag);
+  renderQuizTagFilter();
+}
+
+function quizFromStudy() {
+  const pool = studyWords.filter(w => w.chinese);
+
+  if (pool.length < 4) {
+    alert('需要至少 4 個有中文翻譯的單字才能考驗。請先執行 AI 翻譯，或增加抽取數量。');
+    return;
+  }
+
+  // Navigate to quiz tab
+  const quizBtn = [...document.querySelectorAll('.nav-btn')]
+    .find(b => b.getAttribute('onclick')?.includes("'quiz'"));
+  showScreen('quiz', quizBtn);
+
+  const minutes = parseInt(document.getElementById('quiz-minutes').value) || 20;
+  const mode    = document.getElementById('quiz-mode').value;
+  shuffle(pool);
+
+  quizState = {
+    pool,
+    mode,
+    index: 0,
+    correct: 0,
+    wrong: 0,
+    totalSeconds: minutes * 60,
+    secondsLeft: minutes * 60,
+    wrongWords: [],
+    answered: false,
+    fromStudy: true
+  };
+
+  document.getElementById('quiz-setup').style.display = 'none';
+  document.getElementById('quiz-running').style.display = 'block';
+  document.getElementById('quiz-results').style.display = 'none';
+  document.getElementById('quiz-from-study-badge').style.display = 'inline-block';
+
+  startQuizTimer();
+  renderQuestion();
+}
+
+function startQuiz() {
+  let pool = loadWords().filter(w => w.chinese);
+
+  if (quizSelectedResources.size > 0) {
+    if (quizSelectedResources.has('__notag__')) {
+      const others = new Set([...quizSelectedResources].filter(r => r !== '__notag__'));
+      pool = pool.filter(w => {
+        const hasTag = (w.resource || '').split(',').map(r => cleanStr(r)).some(r => r);
+        return !hasTag || (others.size > 0 && (w.resource || '').split(',').map(r => cleanStr(r)).some(r => others.has(r)));
+      });
+    } else {
+      pool = pool.filter(w =>
+        (w.resource || '').split(',').map(r => cleanStr(r)).some(r => quizSelectedResources.has(r))
+      );
+    }
+  }
+  if (quizSelectedTags.size > 0)
+    pool = pool.filter(w => quizSelectedTags.has(w.tag));
+
+  if (pool.length < 4) {
+    showStatus('quiz-setup-status', '需要至少 4 個有中文翻譯的單字才能開始。', 'error');
+    return;
+  }
+
+  const minutes = parseInt(document.getElementById('quiz-minutes').value) || 20;
+  const mode = document.getElementById('quiz-mode').value;
+  shuffle(pool);
+
+  quizState = {
+    pool,
+    mode,
+    index: 0,
+    correct: 0,
+    wrong: 0,
+    totalSeconds: minutes * 60,
+    secondsLeft: minutes * 60,
+    wrongWords: [],
+    answered: false
+  };
+
+  document.getElementById('quiz-setup').style.display = 'none';
+  document.getElementById('quiz-running').style.display = 'block';
+  document.getElementById('quiz-results').style.display = 'none';
+  document.getElementById('quiz-from-study-badge').style.display = 'none';
+
+  startQuizTimer();
+  renderQuestion();
+}
+
+function startQuizTimer() {
+  updateTimer();
+  quizTimer = setInterval(() => {
+    quizState.secondsLeft--;
+    updateTimer();
+    if (quizState.secondsLeft <= 0) { clearInterval(quizTimer); showResults(); }
+  }, 1000);
+}
+
+function updateTimer() {
+  const s = quizState.secondsLeft;
+  const m = Math.floor(s / 60);
+  const sec = s % 60;
+  const el = document.getElementById('quiz-timer');
+  el.textContent = `${String(m).padStart(2,'0')}:${String(sec).padStart(2,'0')}`;
+  el.classList.toggle('urgent', s <= 60);
+
+  // Time-based progress bar
+  const pct = (1 - s / quizState.totalSeconds) * 100;
+  document.getElementById('quiz-bar').style.width = pct + '%';
+}
+
+function renderQuestion() {
+  if (quizState.index >= quizState.pool.length) {
+    clearInterval(quizTimer);
+    showResults();
+    return;
+  }
+
+  quizState.answered = false;
+  const current = quizState.pool[quizState.index];
+  const all = quizState.pool;
+  const mode = quizState.mode;
+
+  document.getElementById('quiz-progress').textContent =
+    `第 ${quizState.index + 1} 題 / 共 ${quizState.pool.length} 題`;
+  document.getElementById('quiz-feedback').innerHTML = '';
+
+  // Pick 3 distractors
+  const others = all.filter((_, i) => i !== quizState.index);
+  shuffle(others);
+  const distractors = others.slice(0, 3);
+
+  let question, correctAns, choices;
+
+  if (mode === 'en2zh') {
+    question = current.word;
+    document.getElementById('quiz-sub').textContent = current.tag ? `(${current.tag})` : '';
+    correctAns = current.chinese;
+    choices = shuffle([current, ...distractors].map(w => w.chinese));
+  } else {
+    question = current.chinese;
+    document.getElementById('quiz-sub').textContent = '';
+    correctAns = current.word;
+    choices = shuffle([current, ...distractors].map(w => w.word));
+  }
+
+  document.getElementById('quiz-question').textContent = question;
+
+  document.getElementById('quiz-choices').innerHTML = choices.map(c => `
+    <button class="choice-btn"
+      onclick="answerQuiz(this,'${escJs(c)}','${escJs(correctAns)}','${escJs(current.word)}')">
+      ${escHtml(c)}
+    </button>
+  `).join('');
+}
+
+function answerQuiz(btn, chosen, correct, wordKey) {
+  if (quizState.answered) return;
+  quizState.answered = true;
+
+  const allBtns = document.querySelectorAll('.choice-btn');
+  allBtns.forEach(b => b.disabled = true);
+
+  const isCorrect = chosen === correct;
+
+  if (isCorrect) {
+    btn.classList.add('correct');
+    quizState.correct++;
+    document.getElementById('quiz-feedback').innerHTML =
+      '<span style="color:var(--green);font-weight:600">✓ 正確！</span>';
+    setTimeout(nextQuestion, 750);
+  } else {
+    btn.classList.add('wrong');
+    allBtns.forEach(b => { if (b.textContent.trim() === correct) b.classList.add('correct'); });
+    quizState.wrong++;
+
+    // Update error count in storage
+    const allStored = loadWords();
+    const found = allStored.find(w => w.word === wordKey);
+    if (found) {
+      found.errorCount = (found.errorCount || 0) + 1;
+      saveWords(allStored);
+      // Also update in pool
+      const pw = quizState.pool.find(w => w.word === wordKey);
+      if (pw) pw.errorCount = found.errorCount;
+      quizState.wrongWords.push({ ...found });
+    }
+
+    document.getElementById('quiz-feedback').innerHTML =
+      `<span style="color:var(--red)">✗ 正確答案：${escHtml(correct)}</span>`;
+    setTimeout(nextQuestion, 1500);
+  }
+}
+
+function nextQuestion() {
+  quizState.index++;
+  if (quizState.index >= quizState.pool.length || quizState.secondsLeft <= 0) {
+    clearInterval(quizTimer);
+    showResults();
+  } else {
+    renderQuestion();
+  }
+}
+
+function showResults() {
+  clearInterval(quizTimer);
+  document.getElementById('quiz-running').style.display = 'none';
+  document.getElementById('quiz-results').style.display = 'block';
+
+  const { correct, wrong, wrongWords, totalSeconds, secondsLeft } = quizState;
+  const total = correct + wrong;
+  const pct = total ? Math.round(correct / total * 100) : 0;
+  const used = totalSeconds - secondsLeft;
+  const m = Math.floor(used / 60), s = used % 60;
+
+  document.getElementById('result-stats').innerHTML = `
+    <div class="result-stat"><span>作答題數</span><span class="val">${total}</span></div>
+    <div class="result-stat"><span>正確</span><span class="val good">${correct}</span></div>
+    <div class="result-stat"><span>錯誤</span><span class="val bad">${wrong}</span></div>
+    <div class="result-stat"><span>正確率</span><span class="val ${pct >= 70 ? 'good' : 'bad'}">${pct}%</span></div>
+    <div class="result-stat"><span>用時</span><span class="val">${m} 分 ${s} 秒</span></div>
+  `;
+
+  const wrongUnique = [...new Map(wrongWords.map(w => [w.word, w])).values()];
+  if (wrongUnique.length > 0) {
+    document.getElementById('wrong-card').style.display = 'block';
+    document.getElementById('wrong-list').innerHTML = wrongUnique.map(w =>
+      wordCardHTML(w, {
+        showError: true,
+        actions: `
+          <span style="font-size:10px;color:var(--red);font-weight:600;">×${w.errorCount}</span>
+          <button class="btn-icon" onclick="speak('${escJs(w.word)}')" title="朗讀">🔊</button>`
+      })
+    ).join('');
+
+    // Pre-load wrong words into study mode
+    studyWords = wrongUnique;
+  } else {
+    document.getElementById('wrong-card').style.display = 'none';
+  }
+}
+
+function resetQuiz() {
+  clearInterval(quizTimer);
+  const wasFromStudy = quizState?.fromStudy;
+  quizState = null;
+
+  if (wasFromStudy && studyWords.length >= 4) {
+    // Re-quiz the same study batch
+    quizFromStudy();
+    return;
+  }
+
+  document.getElementById('quiz-setup').style.display = 'block';
+  document.getElementById('quiz-running').style.display = 'none';
+  document.getElementById('quiz-results').style.display = 'none';
+  document.getElementById('quiz-setup-status').textContent = '';
+}
+
+// ═══════════════════════════════════════════
+//  WORD BANK
+// ═══════════════════════════════════════════
+let bankSelectedResources = new Set();
+
+function renderBankResourceFilter() {
+  const allWords   = loadWords();   // single load
+  const CJK = /[\u4e00-\u9fff\u3400-\u4dbf]/;
+  const resSet = new Set();
+  const counts = {};
+  const noTagSet = [];
+  for (const w of allWords) {
+    const parts = (w.resource || '').split(',').map(r => cleanStr(r)).filter(r => r && !CJK.test(r));
+    if (parts.length === 0) { noTagSet.push(w); continue; }
+    for (const r of parts) { resSet.add(r); counts[r] = (counts[r] || 0) + 1; }
+  }
+  const resources  = [...resSet].sort();
+  const noTagCount = noTagSet.length;
+  const container  = document.getElementById('bank-resource-filter');
+  if (resources.length === 0 && noTagCount === 0) { container.style.display = 'none'; return; }
+  container.style.display = 'flex';
+  const noTagChip = noTagCount > 0 ? `
+    <span class="resource-chip ${bankSelectedResources.has('__notag__') ? 'active' : ''}"
+          style="border-style:dashed;"
+          onclick="bankToggleResource('__notag__')">無標籤<span class="chip-count">${noTagCount}</span></span>` : '';
+  container.innerHTML = resources.map(r => `
+    <span class="resource-chip ${bankSelectedResources.has(r) ? 'active' : ''}"
+          onclick="bankToggleResource('${escJs(r)}')">${escHtml(r)}<span class="chip-count">${counts[r] || 0}</span></span>
+  `).join('') + noTagChip;
+}
+
+function bankToggleResource(res) {
+  if (bankSelectedResources.has(res)) bankSelectedResources.delete(res);
+  else bankSelectedResources.add(res);
+  bankPage = 0;
+  renderBankResourceFilter();
+  renderBank();
+  updateBankActionBar();
+}
+
+function wordHasSelectedResource(w) {
+  if (bankSelectedResources.has('__notag__')) {
+    const hasTag = (w.resource || '').split(',').map(r => cleanStr(r)).some(r => r);
+    if (!hasTag) return true;
+  }
+  return (w.resource || '').split(',').map(r => cleanStr(r)).some(r => r && bankSelectedResources.has(r));
+}
+
+function updateBankActionBar() {
+  const bar = document.getElementById('bank-action-bar');
+  if (bankSelectedResources.size === 0) { bar.style.display = 'none'; return; }
+  const count = loadWords().filter(wordHasSelectedResource).length;
+  bar.style.display = 'flex';
+  bar.style.alignItems = 'center';
+  document.getElementById('delete-resource-count').textContent = `（共 ${count} 個單字）`;
+}
+
+function confirmDeleteByResource() {
+  const labels = [...bankSelectedResources].join('、');
+  const count  = loadWords().filter(wordHasSelectedResource).length;
+  pendingAction = () => {
+    saveWords(loadWords().filter(w => !wordHasSelectedResource(w)));
+    bankSelectedResources.clear();
+    renderBankResourceFilter();
+    updateBankActionBar();
+    renderBank();
+  };
+  document.getElementById('confirm-title').textContent = '整批刪除';
+  document.getElementById('confirm-msg').textContent =
+    `確定要刪除「${labels}」的全部 ${count} 個單字嗎？此動作無法復原。`;
+  document.getElementById('confirm-overlay').classList.add('show');
+}
+
+let bankPage = 0;
+const BANK_PAGE_SIZE = 60;
+
+function renderBank() {
+  try {
+    const q     = (document.getElementById('bank-search')?.value || '').toLowerCase();
+    const all   = loadWords();   // single load, reused everywhere
+    let words   = all;
+
+    if (bankSelectedResources.size > 0) {
+      if (bankSelectedResources.has('__notag__')) {
+        const others = new Set([...bankSelectedResources].filter(r => r !== '__notag__'));
+        words = words.filter(w => {
+          const hasTag = (w.resource || '').split(',').map(r => cleanStr(r)).some(r => r);
+          return !hasTag || (others.size > 0 && (w.resource || '').split(',').map(r => cleanStr(r)).some(r => others.has(r)));
+        });
+      } else {
+        words = words.filter(w =>
+          (w.resource || '').split(',').map(r => cleanStr(r)).some(r => bankSelectedResources.has(r))
+        );
+      }
+    }
+
+    if (q) {
+      words = words.filter(w =>
+        w.word.toLowerCase().includes(q) || (w.chinese && w.chinese.includes(q)) ||
+        (w.tag && w.tag.toLowerCase().includes(q)) || (w.resource && w.resource.toLowerCase().includes(q))
+      );
+      bankPage = 0;
+    }
+
+    const container = document.getElementById('bank-list');
+    if (words.length === 0) {
+      container.innerHTML = `<div class="empty-state">${q ? '查無符合的單字' : '單字庫是空的，請先匯入。'}</div>`;
+      return;
+    }
+
+    const total = words.length;
+    const pages = Math.ceil(total / BANK_PAGE_SIZE);
+    if (bankPage >= pages) bankPage = Math.max(0, pages - 1);  // bounds check
+    const start = bankPage * BANK_PAGE_SIZE;
+    const end   = Math.min(start + BANK_PAGE_SIZE, total);
+    const paged = words.slice(start, end);
+
+    const cards = paged.map(w => {
+      try {
+        return wordCardHTML(w, {
+          showError: true,
+          actions: `
+            <button class="btn-icon" onclick="speak('${escJs(w.word)}')" title="朗讀">🔊</button>
+            <button class="btn-icon" onclick="confirmDeleteWord('${escJs(w.word)}')" title="刪除">🗑</button>`
+        });
+      } catch { return ''; }
+    }).join('');
+
+    const pageNav = pages > 1 ? `
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 0;font-size:13px;color:var(--ink2);">
+        <button class="btn btn-outline btn-sm" onclick="bankGoPage(${bankPage - 1})" ${bankPage === 0 ? 'disabled' : ''}>← 上一頁</button>
+        <span>${bankPage + 1} / ${pages}（共 ${total}）</span>
+        <button class="btn btn-outline btn-sm" onclick="bankGoPage(${bankPage + 1})" ${bankPage >= pages - 1 ? 'disabled' : ''}>下一頁 →</button>
+      </div>` : `<div style="font-size:11px;color:var(--ink2);text-align:center;padding:8px 0;">共 ${total} 個單字</div>`;
+
+    container.innerHTML = cards + pageNav;
+  } catch(err) {
+    document.getElementById('bank-list').innerHTML =
+      `<div class="empty-state">顯示錯誤，請重新整理頁面。<br><small>${err.message}</small></div>`;
+  }
+}
+
+function bankGoPage(page) {
+  bankPage = page;
+  renderBank();
+  document.getElementById('screen-bank').scrollTop = 0;
+}
+
+// ═══════════════════════════════════════════
+//  CONFIRM DIALOG
+// ═══════════════════════════════════════════
+let pendingAction = null;
+
+function confirmDeleteWord(word) {
+  pendingAction = () => {
+    const words = loadWords().filter(w => w.word !== word);
+    saveWords(words);
+    renderBank();
+  };
+  document.getElementById('confirm-title').textContent = '刪除單字';
+  document.getElementById('confirm-msg').textContent = `確定要刪除「${word}」嗎？`;
+  document.getElementById('confirm-overlay').classList.add('show');
+}
+
+function confirmDeleteSearchResults() {
+  const q = (document.getElementById('bank-search')?.value || '').trim();
+  if (!q) { confirmClearAll(); return; }   // no search → clear all
+  const toDelete = loadWords().filter(w =>
+    w.word.toLowerCase().includes(q.toLowerCase()) ||
+    (w.chinese && w.chinese.includes(q)) ||
+    (w.resource && w.resource.toLowerCase().includes(q.toLowerCase()))
+  );
+  if (toDelete.length === 0) { alert('目前搜尋結果無單字可刪除。'); return; }
+  const keys = new Set(toDelete.map(w => w.word));
+  pendingAction = () => {
+    saveWords(loadWords().filter(w => !keys.has(w.word)));
+    document.getElementById('bank-search').value = '';
+    renderBankResourceFilter();
+    updateBankActionBar();
+    renderBank();
+  };
+  document.getElementById('confirm-title').textContent = '刪除搜尋結果';
+  document.getElementById('confirm-msg').textContent =
+    `確定要刪除搜尋「${q}」的全部 ${toDelete.length} 個單字嗎？此動作無法復原。`;
+  document.getElementById('confirm-overlay').classList.add('show');
+}
+
+function confirmClearAll() {
+  pendingAction = () => { saveWords([]); renderBank(); };
+  document.getElementById('confirm-title').textContent = '清空單字庫';
+  document.getElementById('confirm-msg').textContent = '確定要清空所有單字嗎？此動作無法復原。';
+  document.getElementById('confirm-overlay').classList.add('show');
+}
+
+function confirmAction() {
+  if (pendingAction) { pendingAction(); pendingAction = null; }
+  closeConfirm();
+}
+
+function closeConfirm() {
+  document.getElementById('confirm-overlay').classList.remove('show');
+}
+
+document.getElementById('confirm-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeConfirm();
+});
+
+// ═══════════════════════════════════════════
+//  UTILITIES
+// ═══════════════════════════════════════════
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [arr[i], arr[j]] = [arr[j], arr[i]];
+  }
+  return arr;
+}
+
+function showStatus(id, msg, type) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.className = 'status-msg status-' + type;
+  el.textContent = msg;
+}
+
+function escHtml(str) {
+  return String(str || '')
+    .replace(/&/g,'&amp;').replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+function escJs(str) {
+  return String(str || '')
+    .replace(/\\/g,'\\\\').replace(/'/g,"\\'")
+    .replace(/"/g,'\\"').replace(/\n/g,'\\n');
+}
+
+// ═══════════════════════════════════════════
+//  BACKUP & RESTORE
+// ═══════════════════════════════════════════
+const BACKUP_TS_KEY  = 'wordvault_last_backup';
+const REMINDER_KEY   = 'wordvault_reminder_days';
+
+// ═══════════════════════════════════════════
+//  GITHUB GIST SYNC
+// ═══════════════════════════════════════════
+const GIST_TOKEN_KEY = 'wordvault_gist_token';
+const GIST_ID_KEY    = 'wordvault_gist_id';
+const GIST_FILENAME  = 'wordvault_sync.json';
+
+function getGistToken() { return localStorage.getItem(GIST_TOKEN_KEY) || ''; }
+function getGistId()    { return localStorage.getItem(GIST_ID_KEY) || ''; }
+
+function saveGistToken() {
+  const val = document.getElementById('gist-token-input').value.trim();
+  if (!val) { alert('請輸入 Token'); return; }
+  localStorage.setItem(GIST_TOKEN_KEY, val);
+  document.getElementById('gist-token-input').value = '';
+  refreshGistUI();
+  showStatus('gist-sync-status', '✅ Token 已儲存，請點「推送到雲端」完成首次設定', 'success');
+}
+
+function saveGistId() {
+  const val = document.getElementById('gist-id-input').value.trim();
+  if (!val) { alert('請輸入 Gist ID'); return; }
+  localStorage.setItem(GIST_ID_KEY, val);
+  document.getElementById('gist-id-input').value = '';
+  refreshGistUI();
+  showStatus('gist-sync-status', '✅ Gist ID 已套用，可以按「☁️ 從雲端讀取」了', 'success');
+}
+
+async function copyGistId() {
+  const id = getGistId();
+  if (!id) return;
+  try {
+    await navigator.clipboard.writeText(id);
+    showStatus('gist-sync-status', '✅ Gist ID 已複製，到 iPhone 貼上即可', 'success');
+  } catch {
+    prompt('請手動複製這個 Gist ID：', id);
+  }
+}
+
+function clearGistSetup() {
+  if (!confirm('確定要清除 GitHub Token 和 Gist 設定？')) return;
+  localStorage.removeItem(GIST_TOKEN_KEY);
+  localStorage.removeItem(GIST_ID_KEY);
+  refreshGistUI();
+}
+
+function toggleGistSetup() {
+  const el = document.getElementById('gist-setup-section');
+  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+}
+
+function refreshGistUI() {
+  const hasToken = !!getGistToken();
+  const gistId   = getGistId();
+  const statusRow = document.getElementById('gist-status-row');
+  const syncBtns  = document.getElementById('gist-sync-btns');
+  const idRow     = document.getElementById('gist-id-row');
+
+  if (hasToken) {
+    statusRow.innerHTML = '● Token 已設定' + (gistId ? '　Gist 已建立 ✓' : '　尚未首次同步');
+    statusRow.style.color = 'var(--green)';
+    syncBtns.style.display = 'block';
+    if (gistId) {
+      idRow.style.display = 'block';
+      document.getElementById('gist-id-label').textContent = gistId;
+    } else {
+      idRow.style.display = 'none';
+    }
+  } else {
+    statusRow.textContent = '尚未設定，點下方「⚙️ 設定 GitHub Token」開始';
+    statusRow.style.color = 'var(--ink2)';
+    syncBtns.style.display = 'none';
+  }
+}
+
+async function syncToGist() {
+  const token = getGistToken();
+  if (!token) { showStatus('gist-sync-status', '請先設定 GitHub Token', 'error'); return; }
+
+  const words = loadWords();
+  const payload = JSON.stringify({ version: 1, syncedAt: new Date().toISOString(), count: words.length, words }, null, 2);
+  const gistId  = getGistId();
+
+  showStatus('gist-sync-status', '⏳ 正在推送到雲端…', 'info');
+
+  try {
+    let resp, data;
+
+    if (gistId) {
+      // Update existing gist
+      resp = await fetch(`https://api.github.com/gists/${gistId}`, {
+        method: 'PATCH',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ files: { [GIST_FILENAME]: { content: payload } } })
+      });
+    } else {
+      // Create new secret gist
+      resp = await fetch('https://api.github.com/gists', {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          description: 'WordVault vocabulary sync',
+          public: false,
+          files: { [GIST_FILENAME]: { content: payload } }
+        })
+      });
+    }
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.message || `GitHub API 錯誤 ${resp.status}`);
+    }
+
+    data = await resp.json();
+    localStorage.setItem(GIST_ID_KEY, data.id);
+    refreshGistUI();
+    showStatus('gist-sync-status', `✅ 推送完成！共 ${words.length} 個單字已同步至雲端`, 'success');
+    markBackupDone();
+  } catch (err) {
+    showStatus('gist-sync-status', `❌ ${err.message}`, 'error');
+  }
+}
+
+async function syncFromGist() {
+  const token  = getGistToken();
+  const gistId = getGistId();
+  if (!token)  { showStatus('gist-sync-status', '請先設定 GitHub Token', 'error'); return; }
+  if (!gistId) { showStatus('gist-sync-status', '請先在此裝置點「推送到雲端」建立 Gist', 'error'); return; }
+
+  showStatus('gist-sync-status', '⏳ 正在從雲端讀取…', 'info');
+
+  try {
+    const resp = await fetch(`https://api.github.com/gists/${gistId}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      throw new Error(err.message || `GitHub API 錯誤 ${resp.status}`);
+    }
+
+    const data    = await resp.json();
+    const content = data.files?.[GIST_FILENAME]?.content;
+    if (!content) throw new Error('Gist 中找不到 WordVault 資料');
+
+    const remote  = JSON.parse(content);
+    const incoming = remote.words || remote;
+    if (!Array.isArray(incoming)) throw new Error('Gist 資料格式錯誤');
+
+    const local = loadWords();
+    const localMap = new Map(local.map(w => [w.word.toLowerCase(), w]));
+    let added = 0, updated = 0;
+
+    for (const w of incoming) {
+      if (!w.word) continue;
+      const existing = localMap.get(w.word.toLowerCase());
+      if (!existing) {
+        local.push(w);
+        localMap.set(w.word.toLowerCase(), w);
+        added++;
+      } else {
+        // Update missing fields from remote
+        let changed = false;
+        if (!existing.chinese && w.chinese) { existing.chinese = w.chinese; changed = true; }
+        if (!existing.pos && w.pos)         { existing.pos = w.pos; changed = true; }
+        if (!existing.pronunciation && w.pronunciation) { existing.pronunciation = w.pronunciation; changed = true; }
+        if (changed) updated++;
+        // Always append any new resources
+        if (w.resource) appendResources(existing, (w.resource || '').split(',').map(r => cleanStr(r)).filter(Boolean));
+      }
+    }
+
+    saveWords(local);
+    updateGlobalCount();
+    showStatus('gist-sync-status',
+      `✅ 從雲端讀取完成！新增 ${added} 個單字${updated ? `，補齊 ${updated} 個翻譯` : ''}（本機已有的單字保留不動）`,
+      'success'
+    );
+  } catch (err) {
+    showStatus('gist-sync-status', `❌ ${err.message}`, 'error');
+  }
+}
+
+// ── CLIPBOARD SYNC ──────────────────────────────────────
+async function copyToClipboard() {
+  const words = loadWords();
+  if (words.length === 0) { showStatus('clipboard-status', '單字庫是空的', 'error'); return; }
+  const payload = JSON.stringify({ version: 1, exportedAt: new Date().toISOString(), count: words.length, words });
+  try {
+    await navigator.clipboard.writeText(payload);
+    showStatus('clipboard-status', `✅ 已複製 ${words.length} 個單字到剪貼簿，到 iPhone Safari 貼上還原即可`, 'success');
+  } catch {
+    // Fallback: show in textarea for manual copy
+    const ta = document.createElement('textarea');
+    ta.value = payload;
+    ta.style.cssText = 'position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);width:80%;height:200px;z-index:9999;font-size:11px;';
+    document.body.appendChild(ta);
+    ta.select();
+    showStatus('clipboard-status', '請手動全選並複製上方文字框的內容', 'info');
+    setTimeout(() => ta.remove(), 30000);
+  }
+}
+
+async function pasteFromClipboard() {
+  try {
+    const text = await navigator.clipboard.readText();
+    if (!text) { showStatus('clipboard-status', '剪貼簿是空的', 'error'); return; }
+    restoreFromJSON(text);
+    showStatus('clipboard-status', '✅ 從剪貼簿還原完成', 'success');
+  } catch {
+    showStatus('clipboard-status', '❌ 無法讀取剪貼簿，請直接貼到「還原備份」的檔案輸入', 'error');
+  }
+}
+
+function markBackupDone() {
+  const now = Date.now();
+  localStorage.setItem(BACKUP_TS_KEY, now);
+  updateLastBackupLabel();
+  hideBanner();
+}
+
+function updateLastBackupLabel() {
+  const ts = localStorage.getItem(BACKUP_TS_KEY);
+  const el = document.getElementById('last-backup-label');
+  if (!el) return;
+  if (!ts) { el.textContent = '尚未備份'; return; }
+  const days = Math.floor((Date.now() - Number(ts)) / 86400000);
+  el.textContent = days === 0 ? '今天已備份 ✓' : `${days} 天前`;
+}
+
+function saveReminderSetting() {
+  const val = document.getElementById('reminder-interval').value;
+  localStorage.setItem(REMINDER_KEY, val);
+}
+
+function loadReminderSetting() {
+  const val = localStorage.getItem(REMINDER_KEY) || '30';
+  const el = document.getElementById('reminder-interval');
+  if (el) el.value = val;
+  return Number(val);
+}
+
+function checkBackupReminder() {
+  const days = loadReminderSetting();
+  updateLastBackupLabel();
+  if (days === 0) return;
+
+  const ts = localStorage.getItem(BACKUP_TS_KEY);
+  if (!ts) {
+    // Never backed up — remind after first import
+    if (loadWords().length > 0) showBanner('📦 你還沒做過備份，建議到「匯入」頁面下載一份 JSON 備份。');
+    return;
+  }
+  const elapsed = Math.floor((Date.now() - Number(ts)) / 86400000);
+  if (elapsed >= days) {
+    const label = days === 30 ? '一個月' : '一季';
+    showBanner(`⏰ 距離上次備份已超過${label}，建議到「匯入」頁面下載最新備份。`);
+  }
+}
+
+function showBanner(msg) {
+  document.getElementById('reminder-msg').textContent = msg;
+  document.getElementById('reminder-banner').classList.add('show');
+}
+
+function hideBanner() {
+  document.getElementById('reminder-banner').classList.remove('show');
+}
+
+function dismissReminder() {
+  hideBanner();
+}
+
+// ── EXPORT ──────────────────────────────────
+function exportJSON() {
+  const words = loadWords();
+  if (words.length === 0) { alert('單字庫是空的，無法匯出。'); return; }
+
+  const payload = {
+    version: 1,
+    exportedAt: new Date().toISOString(),
+    count: words.length,
+    words
+  };
+
+  downloadFile(
+    `WordVault_backup_${datestamp()}.json`,
+    JSON.stringify(payload, null, 2),
+    'application/json'
+  );
+  markBackupDone();
+}
+
+function exportCSV() {
+  const words = loadWords();
+  if (words.length === 0) { alert('單字庫是空的，無法匯出。'); return; }
+
+  const header = ['Word / Phrase / Sentence', 'Translation / Definition', 'Resource', 'Tag', 'Error Count'];
+  const rows = words.map(w => [
+    csvCell(w.word),
+    csvCell(w.chinese),
+    csvCell(w.resource),
+    csvCell(w.tag),
+    w.errorCount || 0
+  ]);
+
+  const csv = [header, ...rows].map(r => r.join(',')).join('\n');
+  downloadFile(`WordVault_${datestamp()}.csv`, '\uFEFF' + csv, 'text/csv');  // BOM for Excel
+  markBackupDone();
+}
+
+function csvCell(val) {
+  const s = String(val || '');
+  return s.includes(',') || s.includes('"') || s.includes('\n')
+    ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function datestamp() {
+  return new Date().toISOString().slice(0, 10);
+}
+
+function downloadFile(filename, content, mime) {
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([content], { type: mime }));
+  a.download = filename;
+  a.click();
+  URL.revokeObjectURL(a.href);
+}
+
+// ── RESTORE ─────────────────────────────────
+function restoreBackup(input) {
+  const file = input.files[0];
+  if (!file) return;
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const text = e.target.result;
+    try {
+      if (file.name.endsWith('.json')) {
+        restoreFromJSON(text);
+      } else {
+        restoreFromCSV(text);
+      }
+    } catch (err) {
+      showStatus('restore-status', `❌ 還原失敗：${err.message}`, 'error');
+    }
+  };
+  reader.readAsText(file, 'UTF-8');
+  input.value = '';
+}
+
+function restoreFromJSON(text) {
+  const payload = JSON.parse(text);
+  const incoming = payload.words || payload;   // support both wrapped and raw array
+  if (!Array.isArray(incoming)) throw new Error('JSON 格式不符');
+
+  const existing = loadWords();
+  const existingSet = new Set(existing.map(w => w.word.toLowerCase()));
+  let added = 0, skipped = 0;
+
+  for (const w of incoming) {
+    if (!w.word) continue;
+    if (existingSet.has(w.word.toLowerCase())) { skipped++; continue; }
+    existing.push({
+      word: w.word, tag: w.tag || '', resource: w.resource || '',
+      chinese: w.chinese || '', errorCount: w.errorCount || 0, pronunciation: w.pronunciation || ''
+    });
+    existingSet.add(w.word.toLowerCase());
+    added++;
+  }
+
+  saveWords(existing);
+  showStatus('restore-status',
+    `✅ 還原完成：新增 ${added} 個${skipped ? `，跳過重複 ${skipped} 個` : ''}`,
+    'success'
+  );
+}
+
+function restoreFromCSV(text) {
+  // Reuse the existing CSV import logic
+  const rows = parseCSV(text);
+  if (rows.length < 2) throw new Error('CSV 內容為空');
+
+  const existing = loadWords();
+  const existingSet = new Set(existing.map(w => w.word.toLowerCase()));
+  let added = 0, skipped = 0;
+
+  // Detect column positions from header
+  const header = rows[0].map(h => h.toLowerCase());
+  const iCol = header.findIndex(h => h.includes('word'));
+  const zhCol = header.findIndex(h => h.includes('translation') || h.includes('definition'));
+  const resCol = header.findIndex(h => h.includes('resource'));
+  const tagCol = header.findIndex(h => h.includes('tag'));
+  const errCol = header.findIndex(h => h.includes('error'));
+
+  for (let i = 1; i < rows.length; i++) {
+    const r = rows[i];
+    const word = (r[iCol >= 0 ? iCol : 0] || '').trim();
+    if (!word) continue;
+    if (existingSet.has(word.toLowerCase())) { skipped++; continue; }
+
+    existing.push({
+      word,
+      chinese:    (r[zhCol  >= 0 ? zhCol  : 1] || '').trim(),
+      resource:   (r[resCol >= 0 ? resCol : 2] || '').trim(),
+      tag:        (r[tagCol >= 0 ? tagCol : 3] || '').trim(),
+      errorCount: Number(r[errCol >= 0 ? errCol : 4] || 0),
+      pronunciation: ''
+    });
+    existingSet.add(word.toLowerCase());
+    added++;
+  }
+
+  saveWords(existing);
+  showStatus('restore-status',
+    `✅ 還原完成：新增 ${added} 個${skipped ? `，跳過重複 ${skipped} 個` : ''}`,
+    'success'
+  );
+}
+
+// ═══════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════
+
+// Strip invisible / control characters that .trim() misses (BOM, ZWSP, NBSP, \r, etc.)
+function cleanStr(s) {
+  return (s || '')
+    .replace(/[\u0000-\u001F\u007F\u00A0\u200B\u200C\u200D\uFEFF\u2028\u2029]/g, '')
+    .trim();
+}
+
+// Migration: fix words where Chinese translation was mistakenly stored in `tag`
+(function fixChineseInTag() {
+  const CJK = /[\u4e00-\u9fff\u3400-\u4dbf]/;
+  const words = loadWords();
+  let dirty = false;
+  for (const w of words) {
+    if (w.tag && CJK.test(w.tag) && !w.chinese) {
+      w.chinese = w.tag;
+      w.tag = '';
+      dirty = true;
+    }
+  }
+  if (dirty) saveWords(words);
+})();
+
+// Startup migration: normalize every resource value in storage
+(function normalizeAllResources() {
+  const CJK = /[\u4e00-\u9fff\u3400-\u4dbf]/;
+  const words = loadWords();
+  let dirty = false;
+  for (const w of words) {
+    const clean = cleanStr(w.resource);
+    const final = CJK.test(clean) ? '' : clean;
+    if (final !== (w.resource || '')) { w.resource = final; dirty = true; }
+  }
+  if (dirty) saveWords(words);
+})();
+
+// Migration: aggressively fix Chinese in tag field
+(function fixChineseInTag() {
+  const CJK = /[\u4e00-\u9fff\u3400-\u4dbf]/;
+  const words = loadWords();
+  let dirty = false;
+  for (const w of words) {
+    if (!w.tag) continue;
+    if (CJK.test(w.tag)) {
+      // Move Chinese tag to chinese field if chinese is empty
+      if (!w.chinese) w.chinese = w.tag;
+      w.tag = '';
+      dirty = true;
+    }
+  }
+  if (dirty) saveWords(words);
+})();
+
+updateGlobalCount();
+checkBackupReminder();
+refreshApiKeyUI();
+refreshGistUI();
+
+// Restore last active tab
+(function restoreLastTab() {
+  const last = localStorage.getItem('wordvault_last_tab') || 'import';
+  const valid = ['import', 'study', 'quiz', 'bank'];
+  const tab = valid.includes(last) ? last : 'import';
+  if (tab === 'import') return; // already default
+  const btns = document.querySelectorAll('.nav-btn');
+  let targetBtn = null;
+  btns.forEach(b => {
+    if (b.getAttribute('onclick') && b.getAttribute('onclick').includes(`'${tab}'`)) targetBtn = b;
+  });
+  showScreen(tab, targetBtn);
+})();
+</script>
+</body>
+</html>
