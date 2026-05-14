@@ -1241,8 +1241,8 @@ async function batchTranslate() {
       ).join('\n');
 
       const systemPrompt = chunkNeedFull.length
-        ? '你是英文字典助理。對於每個輸入的英文單字或片語，回傳一個 JSON 物件，key 是英文單字（與輸入完全一致，不含方括號內容），value 是包含三個欄位的物件：chinese（繁體中文解釋，格式如 "n. 韌性；彈性"）、pos（詞性縮寫，如 n./v./adj./adv./phrase）、pronunciation（美式 IPA，如 /rɪˈzɪliəns/）。只輸出 JSON，不要其他文字。'
-        : '你是英文字典助理。對於每個輸入的英文單字或片語（方括號內是已有的中文供參考），只需補充 pos（詞性縮寫，如 n./v./adj./adv./phrase）和 pronunciation（美式 IPA）。回傳 JSON 物件，key 是英文單字（與輸入完全一致，不含方括號內容），value 是包含 pos 和 pronunciation 兩個欄位的物件。只輸出 JSON，不要其他文字。';
+        ? '你是英文字典助理。輸入是以換行分隔的英文單字或片語，每行一個。規則：(1) 回傳一個 JSON 物件，每一行輸入對應一個 key-value，不得合併多行為一個 key。(2) key 必須與該行輸入逐字相同，包含拼寫錯誤，絕對不得修正錯字或改變任何字元，不含方括號內容。(3) value 是包含三個欄位的物件：chinese（繁體中文解釋，格式如 "n. 韌性；彈性"）、pos（詞性縮寫，如 n./v./adj./adv./phrase）、pronunciation（美式 IPA）。(4) 若某行為片段或難以翻譯，仍須回傳，chinese 填入最接近的解釋。(5) 只輸出 JSON，不要其他文字。'
+        : '你是英文字典助理。輸入是以換行分隔的英文單字或片語（方括號內是已有的中文供參考），只需補充 pos 和 pronunciation。規則：(1) 每一行對應一個 key-value，不得合併多行。(2) key 必須與該行輸入逐字相同，包含拼寫錯誤，絕對不得修正錯字，不含方括號內容。(3) value 包含 pos（詞性縮寫）和 pronunciation（美式 IPA）兩個欄位。(4) 只輸出 JSON，不要其他文字。';
 
       const resp = await groqFetch({
         model: 'llama-3.3-70b-versatile',
