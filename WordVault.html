@@ -1313,8 +1313,9 @@ async function batchTranslate() {
       }
     }
 
-    const stillMissing = words.filter(w => !String(w.chinese || '').trim());
-    if (translated === 0 && stillMissing.length > 0) {
+    const currentWords = loadWords();
+    const stillMissing = currentWords.filter(w => !String(w.chinese || '').trim());
+    if (stillMissing.length > 0) {
       showStatus('translate-status',
         `⚠ 處理後仍有 ${stillMissing.length} 個單字無中文，可能格式異常，請手動補或刪除：<br>` +
         stillMissing.map(w => `<b>${escHtml(w.word)}</b>`).join('、'),
@@ -2295,34 +2296,14 @@ async function syncFromGist() {
     const incoming = remote.words || remote;
     if (!Array.isArray(incoming)) throw new Error('Gist 資料格式錯誤');
 
-    const local = loadWords();
-    const localMap = new Map(local.map(w => [w.word.toLowerCase(), w]));
-    let added = 0, updated = 0;
+    const normalized = incoming
+      .filter(w => w.word)
+      .map(w => ({ ...w, word: normalizeWordCase(w.word.trim()) }));
 
-    for (const w of incoming) {
-      if (!w.word) continue;
-      const word = normalizeWordCase(w.word.trim());
-      const existing = localMap.get(word.toLowerCase());
-      if (!existing) {
-        local.push({ ...w, word });
-        localMap.set(word.toLowerCase(), w);
-        added++;
-      } else {
-        // Update missing fields from remote
-        let changed = false;
-        if (!existing.chinese && w.chinese) { existing.chinese = w.chinese; changed = true; }
-        if (!existing.pos && w.pos)         { existing.pos = w.pos; changed = true; }
-        if (!existing.pronunciation && w.pronunciation) { existing.pronunciation = w.pronunciation; changed = true; }
-        if (changed) updated++;
-        // Always append any new resources
-        if (w.resource) appendResources(existing, (w.resource || '').split(',').map(r => cleanStr(r)).filter(Boolean));
-      }
-    }
-
-    saveWords(local);
+    saveWords(normalized);
     updateGlobalCount();
     showStatus('gist-sync-status',
-      `✅ 從雲端讀取完成！新增 ${added} 個單字${updated ? `，補齊 ${updated} 個翻譯` : ''}（本機已有的單字保留不動）`,
+      `✅ 從雲端讀取完成！已同步 ${normalized.length} 個單字（完整覆蓋本機單字庫）`,
       'success'
     );
   } catch (err) {
