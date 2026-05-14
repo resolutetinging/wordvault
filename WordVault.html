@@ -1283,13 +1283,20 @@ async function batchTranslate() {
           throw new Error('AI 回應格式錯誤，請重試或縮小批次數量');
       }
 
+      // Build normalized lookup: handles AI correcting typos / changing case in returned keys
+      function norm(s) { return s.trim().replace(/\s+/g, ' ').toLowerCase(); }
+      const normMap = new Map(Object.entries(translations).map(([k, v]) => [norm(k), v]));
+      function findTranslation(word) {
+        return translations[word] || translations[word.toLowerCase()] || normMap.get(norm(word)) || null;
+      }
+
       const allWords = loadWords();
       for (const w of allWords) {
         // skip words not in this chunk
         const inChunk = chunk.find(c => c.word === w.word);
         if (!inChunk) continue;
 
-        const found = translations[w.word] || translations[w.word.toLowerCase()];
+        const found = findTranslation(w.word);
         if (!found) continue;
 
         if (!w.chinese) {
