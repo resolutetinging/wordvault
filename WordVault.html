@@ -419,6 +419,11 @@
     /* ── MISC ── */
     .divider { height: 1px; background: var(--border); margin: 14px 0; }
 
+    .coll-hd{display:flex;align-items:center;justify-content:space-between;cursor:pointer;user-select:none;}
+    .coll-arrow{font-size:13px;color:var(--ink2);transition:transform .2s;line-height:1;}
+    .coll-body{overflow:hidden;transition:max-height .35s ease;max-height:2000px;}
+    .coll-body.collapsed{max-height:0;}
+
     .settings-toggle {
       font-size: 12px;
       color: var(--ink2);
@@ -625,111 +630,115 @@
       </div>
     </div>
 
-    <!-- Backup card -->
-    <div class="card">
-      <div class="section-title">💾 備份與還原</div>
-
-      <p style="font-size:13px;color:var(--ink2);margin-bottom:14px;line-height:1.6;">
-        單字資料存在瀏覽器本地，建議定期匯出備份以防遺失。
-      </p>
-
-      <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px;">匯出</div>
-      <div class="btn-row" style="margin-top:0;">
-        <button class="btn btn-primary" onclick="exportJSON()">⬇ 匯出 JSON 備份</button>
-        <button class="btn btn-outline" onclick="exportCSV()">⬇ 匯出 CSV</button>
+    <!-- Card 1: 備份與還原 (collapsible) -->
+    <div class="card" style="padding:14px 18px;">
+      <div class="coll-hd" onclick="toggleCard('backup-body','backup-arrow')">
+        <div class="section-title" style="margin-bottom:0;">💾 備份與還原</div>
+        <span class="coll-arrow" id="backup-arrow">▾</span>
       </div>
+      <div class="coll-body" id="backup-body">
+        <p style="font-size:13px;color:var(--ink2);margin:12px 0 14px;line-height:1.6;">
+          單字資料存在瀏覽器本地，建議定期匯出備份以防遺失。
+        </p>
+        <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px;">匯出</div>
+        <div class="btn-row" style="margin-top:0;">
+          <button class="btn btn-primary" onclick="exportJSON()">⬇ 匯出 JSON 備份</button>
+          <button class="btn btn-outline" onclick="exportCSV()">⬇ 匯出 CSV</button>
+        </div>
+        <div class="divider"></div>
+        <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px;">還原</div>
+        <input type="file" id="restore-file-input" accept=".json,.csv" style="display:none" onchange="restoreBackup(this)" />
+        <button class="btn btn-outline" style="width:100%;" onclick="document.getElementById('restore-file-input').click()">
+          ⬆ 從備份檔案還原
+        </button>
+        <p style="font-size:11px;color:var(--ink2);margin-top:6px;">支援 JSON 備份檔，或含翻譯的 CSV（Word, Translation, Resource）。不會覆蓋已有單字，重複自動略過。</p>
+        <div id="restore-status"></div>
+        <div class="divider"></div>
+        <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px;">⏰ 備份提醒</div>
+        <div style="display:flex;align-items:center;gap:10px;">
+          <select id="reminder-interval" onchange="saveReminderSetting()" style="flex:1;">
+            <option value="0">不提醒</option>
+            <option value="30">每個月提醒</option>
+            <option value="90">每季提醒</option>
+          </select>
+          <span style="font-size:12px;color:var(--ink2);" id="last-backup-label">尚未備份</span>
+        </div>
+      </div>
+    </div>
 
-      <div class="divider"></div>
+    <!-- Card 2: 跨裝置同步 (collapsible) -->
+    <div class="card" style="padding:14px 18px;">
+      <div class="coll-hd" onclick="toggleCard('sync-body','sync-arrow')">
+        <div class="section-title" style="margin-bottom:0;">☁️ 跨裝置同步</div>
+        <span class="coll-arrow" id="sync-arrow">▾</span>
+      </div>
+      <div class="coll-body" id="sync-body">
+        <div style="font-size:12px;font-weight:600;color:var(--ink2);margin:12px 0 8px;">📱 剪貼簿同步</div>
+        <p style="font-size:12px;color:var(--ink2);margin-bottom:10px;line-height:1.6;">
+          Mac 複製 → iPhone Safari 貼上還原，無需存檔。
+        </p>
+        <div class="btn-row" style="margin-top:0;">
+          <button class="btn btn-primary btn-sm" onclick="copyToClipboard()">📋 複製備份到剪貼簿</button>
+          <button class="btn btn-outline btn-sm" onclick="pasteFromClipboard()">📋 從剪貼簿還原</button>
+        </div>
+        <div id="clipboard-status"></div>
+        <div class="divider"></div>
+        <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:6px;">☁️ GitHub Gist 雙向同步</div>
+        <div id="gist-status-row" style="font-size:12px;color:var(--ink2);margin-bottom:10px;"></div>
+        <div id="gist-sync-btns" style="display:none;">
+          <div class="btn-row" style="margin-top:0;">
+            <button class="btn btn-primary" onclick="syncToGist()">☁️ 推送到雲端</button>
+            <button class="btn btn-outline" onclick="syncFromGist()">☁️ 從雲端讀取</button>
+          </div>
+          <p style="font-size:11px;color:var(--ink2);margin-top:6px;line-height:1.6;">
+            推送 = 上傳本機全部資料覆蓋雲端。從雲端讀取 = 合併雲端資料到本機（不刪除本機已有的單字）。
+          </p>
+        </div>
+        <button class="settings-toggle" onclick="toggleGistSetup()">⚙️ 設定 GitHub Token</button>
+        <div id="gist-setup-section" style="display:none;margin-top:10px;">
+          <label>GitHub Personal Access Token</label>
+          <div style="display:flex;gap:8px;margin-top:5px;">
+            <input type="password" id="gist-token-input" placeholder="ghp_…" style="flex:1;" autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false"/>
+            <button onclick="toggleVis('gist-token-input',this)" style="background:rgba(0,0,0,.06);border:none;border-radius:7px;padding:0 9px;cursor:pointer;font-size:13px;flex-shrink:0;">👁</button>
+            <button class="btn btn-primary btn-sm" onclick="saveGistToken()">儲存</button>
+          </div>
+          <div id="gist-id-row" style="margin-top:10px;display:none;">
+            <div style="font-size:11px;color:var(--ink2);margin-bottom:5px;">Gist ID（第一次同步後自動產生）</div>
+            <div style="display:flex;gap:6px;align-items:center;">
+              <span id="gist-id-label" style="font-family:monospace;font-size:11px;word-break:break-all;flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;"></span>
+              <button class="btn btn-outline btn-sm" onclick="copyGistId()" title="複製 Gist ID">📋</button>
+            </div>
+            <button onclick="clearGistSetup()" style="margin-top:6px;font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;text-decoration:underline;padding:0;">清除全部設定</button>
+          </div>
+          <div style="margin-top:12px;">
+            <label style="font-size:11px;font-weight:600;color:var(--ink2);">📱 iPhone 設定：輸入 Gist ID（從 Mac 複製）</label>
+            <div style="display:flex;gap:8px;margin-top:5px;">
+              <input type="text" id="gist-id-input" placeholder="貼上 Gist ID…" style="flex:1;font-size:12px;" />
+              <button class="btn btn-primary btn-sm" onclick="saveGistId()">套用</button>
+            </div>
+            <p style="font-size:11px;color:var(--ink2);margin-top:5px;line-height:1.6;">
+              iPhone 只需貼入 Gist ID，不需要推送。套用後直接按「☁️ 從雲端讀取」即可。
+            </p>
+          </div>
+          <p style="font-size:11px;color:var(--ink2);margin-top:8px;line-height:1.9;">
+            ① 前往 <a href="https://github.com/settings/tokens/new" target="_blank" style="color:var(--blue)">github.com → Settings → Developer settings → Personal access tokens → Tokens (classic)</a><br>
+            ② Note 填 <code>WordVault</code>，Expiration 選 <code>No expiration</code><br>
+            ③ 只勾選 <code>gist</code>，拉到最底點 <strong>Generate token</strong><br>
+            ④ 複製 <code>ghp_…</code> 開頭的 token 貼到上方，按「儲存」<br>
+            ⑤ 第一次按「推送到雲端」會自動建立 Gist
+          </p>
+        </div>
+        <div id="gist-sync-status"></div>
+      </div>
+    </div>
 
-      <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px;">還原</div>
-      <input type="file" id="restore-file-input" accept=".json,.csv" style="display:none" onchange="restoreBackup(this)" />
-      <button class="btn btn-outline" style="width:100%;" onclick="document.getElementById('restore-file-input').click()">
-        ⬆ 從備份檔案還原
-      </button>
-      <p style="font-size:11px;color:var(--ink2);margin-top:6px;">支援 JSON 備份檔，或含翻譯的 CSV（Word, Translation, Resource）。不會覆蓋已有單字，重複自動略過。</p>
-      <div id="restore-status"></div>
-
-      <div class="divider"></div>
-      <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:6px;">🔧 資料修正</div>
+    <!-- Card 3: 資料修正 -->
+    <div class="card">
+      <div class="section-title">🔧 資料修正</div>
       <button class="btn btn-outline btn-sm" onclick="runCaseFix()" style="width:100%;">
         修正單字首字母大寫（執行一次即可）
       </button>
       <div id="case-fix-status" style="margin-top:6px;"></div>
-
-      <div class="divider"></div>
-
-      <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px;">📱 跨裝置同步（剪貼簿）</div>
-      <p style="font-size:12px;color:var(--ink2);margin-bottom:10px;line-height:1.6;">
-        Mac 複製 → iPhone Safari 貼上還原，無需存檔。
-      </p>
-      <div class="btn-row" style="margin-top:0;">
-        <button class="btn btn-primary btn-sm" onclick="copyToClipboard()">📋 複製備份到剪貼簿</button>
-        <button class="btn btn-outline btn-sm" onclick="pasteFromClipboard()">📋 從剪貼簿還原</button>
-      </div>
-      <div id="clipboard-status"></div>
-
-      <div class="divider"></div>
-
-      <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:6px;">☁️ GitHub Gist 雙向同步</div>
-      <div id="gist-status-row" style="font-size:12px;color:var(--ink2);margin-bottom:10px;"></div>
-
-      <div id="gist-sync-btns" style="display:none;">
-        <div class="btn-row" style="margin-top:0;">
-          <button class="btn btn-primary" onclick="syncToGist()">☁️ 推送到雲端</button>
-          <button class="btn btn-outline" onclick="syncFromGist()">☁️ 從雲端讀取</button>
-        </div>
-        <p style="font-size:11px;color:var(--ink2);margin-top:6px;line-height:1.6;">
-          推送 = 上傳本機全部資料覆蓋雲端。從雲端讀取 = 合併雲端資料到本機（不刪除本機已有的單字）。
-        </p>
-      </div>
-
-      <button class="settings-toggle" onclick="toggleGistSetup()">⚙️ 設定 GitHub Token</button>
-      <div id="gist-setup-section" style="display:none;margin-top:10px;">
-        <label>GitHub Personal Access Token</label>
-        <div style="display:flex;gap:8px;margin-top:5px;">
-          <input type="password" id="gist-token-input" placeholder="ghp_…" style="flex:1;" autocomplete="new-password" autocorrect="off" autocapitalize="none" spellcheck="false"/>
-          <button onclick="toggleVis('gist-token-input',this)" style="background:rgba(0,0,0,.06);border:none;border-radius:7px;padding:0 9px;cursor:pointer;font-size:13px;flex-shrink:0;">👁</button>
-          <button class="btn btn-primary btn-sm" onclick="saveGistToken()">儲存</button>
-        </div>
-        <div id="gist-id-row" style="margin-top:10px;display:none;">
-          <div style="font-size:11px;color:var(--ink2);margin-bottom:5px;">Gist ID（第一次同步後自動產生）</div>
-          <div style="display:flex;gap:6px;align-items:center;">
-            <span id="gist-id-label" style="font-family:monospace;font-size:11px;word-break:break-all;flex:1;background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;"></span>
-            <button class="btn btn-outline btn-sm" onclick="copyGistId()" title="複製 Gist ID">📋</button>
-          </div>
-          <button onclick="clearGistSetup()" style="margin-top:6px;font-size:11px;color:var(--red);background:none;border:none;cursor:pointer;text-decoration:underline;padding:0;">清除全部設定</button>
-        </div>
-
-        <div style="margin-top:12px;">
-          <label style="font-size:11px;font-weight:600;color:var(--ink2);">📱 iPhone 設定：輸入 Gist ID（從 Mac 複製）</label>
-          <div style="display:flex;gap:8px;margin-top:5px;">
-            <input type="text" id="gist-id-input" placeholder="貼上 Gist ID…" style="flex:1;font-size:12px;" />
-            <button class="btn btn-primary btn-sm" onclick="saveGistId()">套用</button>
-          </div>
-          <p style="font-size:11px;color:var(--ink2);margin-top:5px;line-height:1.6;">
-            iPhone 只需貼入 Gist ID，不需要推送。套用後直接按「☁️ 從雲端讀取」即可。
-          </p>
-        </div>
-        <p style="font-size:11px;color:var(--ink2);margin-top:8px;line-height:1.9;">
-          ① 前往 <a href="https://github.com/settings/tokens/new" target="_blank" style="color:var(--blue)">github.com → Settings → Developer settings → Personal access tokens → Tokens (classic)</a><br>
-          ② Note 填 <code>WordVault</code>，Expiration 選 <code>No expiration</code><br>
-          ③ 只勾選 <code>gist</code>，拉到最底點 <strong>Generate token</strong><br>
-          ④ 複製 <code>ghp_…</code> 開頭的 token 貼到上方，按「儲存」<br>
-          ⑤ 第一次按「推送到雲端」會自動建立 Gist
-        </p>
-      </div>
-      <div id="gist-sync-status"></div>
-
-      <div class="divider"></div>
-      <div style="font-size:12px;font-weight:600;color:var(--ink2);margin-bottom:8px;">⏰ 備份提醒</div>
-      <div style="display:flex;align-items:center;gap:10px;">
-        <select id="reminder-interval" onchange="saveReminderSetting()" style="flex:1;">
-          <option value="0">不提醒</option>
-          <option value="30">每個月提醒</option>
-          <option value="90">每季提醒</option>
-        </select>
-        <span style="font-size:12px;color:var(--ink2);" id="last-backup-label">尚未備份</span>
-      </div>
     </div>
 
   </section>
@@ -2691,6 +2700,24 @@ try {
     if (dirty) saveWords(words);
   })();
 } catch(e) { console.warn('fixChineseInTag error:', e); }
+
+function toggleCard(bodyId,arrowId){
+  const b=document.getElementById(bodyId);
+  const a=document.getElementById(arrowId);
+  const col=b.classList.toggle('collapsed');
+  if(a)a.style.transform=col?'rotate(-90deg)':'';
+  localStorage.setItem('wv_coll_'+bodyId,col?'1':'0');
+}
+(function initCardCollapse(){
+  ['backup-body','sync-body'].forEach(id=>{
+    if(localStorage.getItem('wv_coll_'+id)==='1'){
+      const b=document.getElementById(id);
+      const a=document.getElementById(id.replace('-body','-arrow'));
+      if(b)b.classList.add('collapsed');
+      if(a)a.style.transform='rotate(-90deg)';
+    }
+  });
+})();
 
 updateGlobalCount();
 checkBackupReminder();
