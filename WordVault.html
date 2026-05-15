@@ -916,6 +916,7 @@
 //  DATA LAYER
 // ═══════════════════════════════════════════
 const STORAGE_KEY = 'wordvault_v1';
+const PRESET_TAGS = ['phrase', 'sentence'];
 
 function loadWords() {
   try { return JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); }
@@ -2174,14 +2175,13 @@ function openTagEditor(word) {
   document.getElementById('tag-editor-new').value = '';
 
   const allResources = getAllResources();
+  const userResources = allResources.filter(r => !PRESET_TAGS.includes(r));
   const chipsEl = document.getElementById('tag-editor-chips');
-  chipsEl.innerHTML = allResources.length === 0
-    ? '<span style="font-size:12px;color:var(--ink2);">（尚無已建立的標籤）</span>'
-    : allResources.map(r => `
-        <span class="resource-chip ${tagEditorSelected.has(r) ? 'active' : ''}"
-              id="tec-${escHtml(r)}" onclick="tagEditorToggle('${escJs(r)}')" style="cursor:pointer;">
-          ${escHtml(r)}
-        </span>`).join('');
+  const lbl = txt => `<div style="font-size:10px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.08em;margin:8px 0 6px;width:100%;">${txt}</div>`;
+  const chip = r => `<span class="resource-chip ${tagEditorSelected.has(r)?'active':''}" id="tec-${escHtml(r)}" onclick="tagEditorToggle('${escJs(r)}')" style="cursor:pointer;">${escHtml(r)}</span>`;
+  chipsEl.innerHTML =
+    lbl('類別') + PRESET_TAGS.map(chip).join('') +
+    (userResources.length > 0 ? lbl('來源') + userResources.map(chip).join('') : '');
 
   document.getElementById('tag-editor-overlay').style.display = 'flex';
 }
