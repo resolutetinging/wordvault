@@ -1485,7 +1485,7 @@ function getAllTags() {
 
 function getAllResources() {
   const CJK = /[\u4e00-\u9fff\u3400-\u4dbf]/;
-  const res = new Set();
+  const res = new Set(PRESET_TAGS);
   for (const w of loadWords()) {
     for (const r of (w.resource || '').split(',')) {
       const clean = cleanStr(r);
@@ -1523,7 +1523,6 @@ function renderStudyResourceFilter() {
   const counts    = getResourceCounts();
   const noTagCount = loadWords().filter(w => !cleanStr(w.resource)).length;
   const container = document.getElementById('study-resource-filter');
-  if (resources.length === 0 && noTagCount === 0) { container.style.display = 'none'; return; }
   container.style.display = 'flex';
   const noTagChip = noTagCount > 0 ? `
     <span class="resource-chip ${studySelectedResources.has('__notag__') ? 'active' : ''}"
@@ -1639,10 +1638,7 @@ function renderQuizResourceFilter() {
   const counts     = getResourceCounts();
   const noTagCount = loadWords().filter(w => !cleanStr(w.resource)).length;
   const container  = document.getElementById('quiz-resource-filter');
-  if (resources.length === 0 && noTagCount === 0) {
-    container.innerHTML = '<span style="font-size:12px;color:var(--ink2);">（無 Resource）</span>';
-    return;
-  }
+  if (resources.length === 0 && noTagCount === 0) { return; }
   const noTagChip = noTagCount > 0 ? `
     <span class="resource-chip ${quizSelectedResources.has('__notag__') ? 'active' : ''}"
           style="border-style:dashed;"
@@ -1941,7 +1937,7 @@ let bankSelectedResources = new Set();
 function renderBankResourceFilter() {
   const allWords   = loadWords();   // single load
   const CJK = /[\u4e00-\u9fff\u3400-\u4dbf]/;
-  const resSet = new Set();
+  const resSet = new Set(PRESET_TAGS);
   const counts = {};
   const noTagSet = [];
   for (const w of allWords) {
