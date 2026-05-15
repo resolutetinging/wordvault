@@ -2207,7 +2207,6 @@ function saveGistToken() {
   const val = document.getElementById('gist-token-input').value.trim();
   if (!val) { alert('請輸入 Token'); return; }
   localStorage.setItem(GIST_TOKEN_KEY, val);
-  document.getElementById('gist-token-input').value = '';
   refreshGistUI();
   showStatus('gist-sync-status', '✅ Token 已儲存，請點「推送到雲端」完成首次設定', 'success');
 }
@@ -2241,7 +2240,9 @@ function clearGistSetup() {
 
 function toggleGistSetup() {
   const el = document.getElementById('gist-setup-section');
-  el.style.display = el.style.display === 'none' ? 'block' : 'none';
+  const opening = el.style.display === 'none';
+  el.style.display = opening ? 'block' : 'none';
+  if(opening){const ti=document.getElementById('gist-token-input');if(ti&&!ti.value)ti.value=getGistToken();}
 }
 
 function refreshGistUI() {
