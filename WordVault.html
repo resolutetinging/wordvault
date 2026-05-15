@@ -2779,6 +2779,20 @@ try {
   })();
 } catch(e) { console.warn('fixChineseInTag error:', e); }
 
+// Backfill phrase tag for existing words with pos=phrase
+try {
+  (function backfillPhraseTag() {
+    const words = loadWords();
+    let dirty = false;
+    for (const w of words) {
+      const before = w.resource;
+      autoTagByPos(w);
+      if (w.resource !== before) dirty = true;
+    }
+    if (dirty) saveWords(words);
+  })();
+} catch(e) { console.warn('backfillPhraseTag error:', e); }
+
 function toggleCard(bodyId,arrowId){
   const b=document.getElementById(bodyId);
   const a=document.getElementById(arrowId);
