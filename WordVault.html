@@ -896,6 +896,21 @@
   </div>
 </div>
 
+<!-- Translation Editor Dialog -->
+<div class="overlay" id="zh-editor-overlay" onclick="closeZhEditor()">
+  <div class="dialog" onclick="event.stopPropagation()" style="max-width:320px;">
+    <h3 style="margin-bottom:4px;">✏️ 編輯中文</h3>
+    <p id="zh-editor-word" style="font-size:13px;color:var(--ink2);margin-bottom:12px;"></p>
+    <input type="text" id="zh-editor-input" placeholder="輸入中文翻譯…"
+           style="width:100%;margin-bottom:14px;"
+           onkeydown="if(event.key==='Enter')saveZhEditor()" />
+    <div class="btn-row" style="margin-top:0;">
+      <button class="btn btn-primary" onclick="saveZhEditor()">儲存</button>
+      <button class="btn btn-outline" onclick="closeZhEditor()">取消</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ═══════════════════════════════════════════
 //  DATA LAYER
@@ -2022,6 +2037,7 @@ function renderBank() {
         return wordCardHTML(w, {
           showError: true,
           actions: `<button class="btn-icon" onclick="speak('${escJs(w.word)}')" title="朗讀">🔊</button>
+                    <button class="btn-icon" onclick="openZhEditor('${escJs(w.word)}')" title="編輯中文">✏️</button>
                     <button class="btn-icon" onclick="openTagEditor('${escJs(w.word)}')" title="編輯標籤">🏷</button>
                     <button class="btn-icon" onclick="confirmDeleteWord('${escJs(w.word)}')" title="刪除">🗑</button>`
         });
@@ -2169,6 +2185,31 @@ function closeTagEditor() {
   document.getElementById('tag-editor-overlay').style.display = 'none';
   tagEditorWord = null;
 }
+
+let zhEditorWord = '';
+function openZhEditor(word) {
+  zhEditorWord = word;
+  const target = loadWords().find(w => w.word === word);
+  if (!target) return;
+  document.getElementById('zh-editor-word').textContent = word;
+  document.getElementById('zh-editor-input').value = target.chinese || '';
+  document.getElementById('zh-editor-overlay').style.display = 'flex';
+  setTimeout(() => document.getElementById('zh-editor-input').focus(), 50);
+}
+function closeZhEditor() {
+  document.getElementById('zh-editor-overlay').style.display = 'none';
+}
+function saveZhEditor() {
+  const val = document.getElementById('zh-editor-input').value.trim();
+  if (!val) { alert('請輸入中文翻譯'); return; }
+  const words = loadWords();
+  const target = words.find(w => w.word === zhEditorWord);
+  if (target) { target.chinese = val; saveWords(words); }
+  closeZhEditor();
+  renderBank();
+  updateGlobalCount();
+}
+
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
