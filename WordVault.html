@@ -1323,10 +1323,46 @@ async function batchTranslate() {
     const currentWords = loadWords();
     const stillMissing = currentWords.filter(w => !String(w.chinese || '').trim());
     if (stillMissing.length > 0) {
-      showStatus('translate-status',
-        `⚠ 處理後仍有 ${stillMissing.length} 個單字無中文，可能格式異常，請手動補或刪除：<br>` +
-        stillMissing.map(w => `<b>${escHtml(w.word)}</b>`).join('、'),
-        'info');
+      // Auto-retry: send a fresh focused request for the words the AI skipped
+      showStatus('translate-status', `⏳ 自動重試 ${stillMissing.length} 個未取得翻譯的單字…`, 'info');
+      await new Promise(r => setTimeout(r, 800));
+      try {
+        const retryResp = await groqFetch({
+          model: 'llama-3.3-70b-versatile',
+          temperature: 0,
+          max_tokens: 600,
+          response_format: { type: 'json_object' },
+          messages: [
+            { role: 'system', content: '你是英文字典助理。以下每行是一個英文單字，你必須全部回傳，不得跳過任何一個。JSON 格式：每個 key 是原輸入單字（不改拼寫、不改大小寫），value 包含 chinese（繁體中文含詞性前綴，如 "n. 唾液"）、pos（n./v./adj./adv./phrase）、pronunciation（美式 IPA）。只輸出 JSON，不要其他文字。' },
+            { role: 'user', content: stillMissing.map(w => w.word).join('\n') }
+          ]
+        });
+        const retryRaw = (await retryResp.json()).choices?.[0]?.message?.content || '{}';
+        let retryT;
+        try { retryT = JSON.parse(retryRaw.replace(/```json|```/g, '').trim()); } catch { retryT = {}; }
+        function normR(s) { return s.trim().replace(/\s+/g, ' ').toLowerCase(); }
+        const retryNorm = new Map(Object.entries(retryT).map(([k, v]) => [normR(k), v]));
+        const findR = w => retryT[w] || retryT[w.toLowerCase()] || retryNorm.get(normR(w)) || null;
+        const allW = loadWords();
+        for (const w of allW) {
+          if (String(w.chinese || '').trim()) continue;
+          const f = findR(w.word);
+          if (!f || !f.chinese) continue;
+          w.chinese = f.chinese; w.pronunciation = f.pronunciation || ''; w.pos = f.pos || '';
+          translated++;
+        }
+        saveWords(allW);
+      } catch (e) { /* retry failed silently, show final state below */ }
+
+      const finalMissing = loadWords().filter(w => !String(w.chinese || '').trim());
+      if (finalMissing.length > 0) {
+        showStatus('translate-status',
+          `⚠ 重試後仍有 ${finalMissing.length} 個單字無中文，請手動補或刪除：<br>` +
+          finalMissing.map(w => `<b>${escHtml(w.word)}</b>`).join('、'),
+          'info');
+      } else {
+        showStatus('translate-status', `✅ 完成！處理 ${translated} 個單字（翻譯 + 補詞性）`, 'success');
+      }
     } else {
       showStatus('translate-status', `✅ 完成！處理 ${translated} 個單字（翻譯 + 補詞性）`, 'success');
     }
