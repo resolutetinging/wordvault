@@ -1332,11 +1332,13 @@ async function batchTranslate() {
           w.chinese       = found.chinese || found;
           w.pronunciation = found.pronunciation || '';
           w.pos           = found.pos || '';
+          autoTagByPos(w);
           translated++;
         } else if (!w.pos) {
           // Pos-only enrichment — don't overwrite existing Chinese
           w.pronunciation = found.pronunciation || w.pronunciation || '';
           w.pos           = found.pos || '';
+          autoTagByPos(w);
           translated++;
         }
       }
@@ -1377,6 +1379,7 @@ async function batchTranslate() {
           const f = findR(w.word);
           if (!f || !f.chinese) continue;
           w.chinese = f.chinese; w.pronunciation = f.pronunciation || ''; w.pos = f.pos || '';
+          autoTagByPos(w);
           translated++;
         }
         saveWords(allW);
@@ -1405,7 +1408,7 @@ async function batchTranslate() {
             const entry = sT[fw.word] || sT[fw.word.toLowerCase()] || Object.values(sT)[0];
             if (entry && entry.chinese) {
               const target = allW2.find(w => w.word === fw.word);
-              if (target) { target.chinese=entry.chinese; target.pronunciation=entry.pronunciation||''; target.pos=entry.pos||''; translated++; }
+              if (target) { target.chinese=entry.chinese; target.pronunciation=entry.pronunciation||''; target.pos=entry.pos||''; autoTagByPos(target); translated++; }
             }
           } catch(e) { /* skip */ }
           if (fi < finalMissing.length - 1) await new Promise(r => setTimeout(r, 300));
@@ -2248,6 +2251,12 @@ function shuffle(arr) {
     [arr[i], arr[j]] = [arr[j], arr[i]];
   }
   return arr;
+}
+
+function autoTagByPos(w) {
+  if ((w.pos || '').toLowerCase() !== 'phrase') return;
+  const parts = (w.resource || '').split(',').map(r => r.trim()).filter(Boolean);
+  if (!parts.includes('phrase')) w.resource = [...parts, 'phrase'].join(',');
 }
 
 function showStatus(id, msg, type) {
