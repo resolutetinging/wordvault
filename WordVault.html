@@ -1383,10 +1383,42 @@ async function batchTranslate() {
 
       const finalMissing = loadWords().filter(w => !String(w.chinese || '').trim());
       if (finalMissing.length > 0) {
-        showStatus('translate-status',
-          `⚠ 重試後仍有 ${finalMissing.length} 個單字無中文，請手動補或刪除：<br>` +
-          finalMissing.map(w => `<b>${escHtml(w.word)}</b>`).join('、'),
-          'info');
+        // Last resort: one request per word — no key-matching issues possible
+        const allW2 = loadWords();
+        for (let fi = 0; fi < finalMissing.length; fi++) {
+          const fw = finalMissing[fi];
+          showStatus('translate-status', `⏳ 逐字補翻譯 ${fi + 1} / ${finalMissing.length}：${escHtml(fw.word)}…`, 'info');
+          try {
+            const singleResp = await groqFetch({
+              model: 'llama-3.3-70b-versatile',
+              temperature: 0,
+              max_tokens: 120,
+              response_format: { type: 'json_object' },
+              messages: [
+                { role: 'system', content: '你是英文字典助理。輸入是一個英文單字，回傳 JSON，key 為該單字，value 包含 chinese（繁體中文含詞性前綴，如 "n. 唾液"）、pos（n./v./adj./adv./phrase）、pronunciation（美式 IPA）。只輸出 JSON。' },
+                { role: 'user', content: fw.word }
+              ]
+            });
+            const sRaw = (await singleResp.json()).choices?.[0]?.message?.content || '{}';
+            let sT; try { sT = JSON.parse(sRaw.replace(/```json|```/g,'').trim()); } catch { sT={}; }
+            const entry = sT[fw.word] || sT[fw.word.toLowerCase()] || Object.values(sT)[0];
+            if (entry && entry.chinese) {
+              const target = allW2.find(w => w.word === fw.word);
+              if (target) { target.chinese=entry.chinese; target.pronunciation=entry.pronunciation||''; target.pos=entry.pos||''; translated++; }
+            }
+          } catch(e) { /* skip */ }
+          if (fi < finalMissing.length - 1) await new Promise(r => setTimeout(r, 300));
+        }
+        saveWords(allW2);
+        const stillFinal = loadWords().filter(w => !String(w.chinese || '').trim());
+        if (stillFinal.length > 0) {
+          showStatus('translate-status',
+            `⚠ ${stillFinal.length} 個單字仍無法翻譯（可能為生僻詞或拼寫異常），請至單字庫手動補充：<br>` +
+            stillFinal.map(w => `<b>${escHtml(w.word)}</b>`).join('、'),
+            'info');
+        } else {
+          showStatus('translate-status', `✅ 完成！處理 ${translated} 個單字（翻譯 + 補詞性）`, 'success');
+        }
       } else {
         showStatus('translate-status', `✅ 完成！處理 ${translated} 個單字（翻譯 + 補詞性）`, 'success');
       }
