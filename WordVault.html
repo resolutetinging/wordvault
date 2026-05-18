@@ -739,6 +739,10 @@
         修正單字首字母大寫（執行一次即可）
       </button>
       <div id="case-fix-status" style="margin-top:6px;"></div>
+      <button class="btn btn-outline btn-sm" onclick="refreshAllPhonetics()" style="width:100%;margin-top:8px;">
+        🔄 重新查詢所有單字音標（Free Dictionary API）
+      </button>
+      <div id="phonetics-refresh-status" style="margin-top:6px;"></div>
     </div>
 
   </section>
@@ -1065,7 +1069,7 @@ function importWords() {
         if (ex) appendResources(ex, resources);
         skipped++;
       } else {
-        existingWords.push({ word, tag: '', resource: resources.join(','), chinese, errorCount: 0, pronunciation: '', pos: '' });
+        existingWords.push({ word, tag: '', resource: resources.join(','), chinese, errorCount: 0, pronunciation: '', pos: '', audioUrl: '' });
         existingSet.add(word.toLowerCase());
         added++;
         if (chinese) withTranslation++;
@@ -1101,7 +1105,7 @@ function importWords() {
         }
         skipped++;
       } else {
-        existingWords.push({ word, tag, resource: resources.join(','), chinese, errorCount: 0, pronunciation: '', pos: '' });
+        existingWords.push({ word, tag, resource: resources.join(','), chinese, errorCount: 0, pronunciation: '', pos: '', audioUrl: '' });
         existingSet.add(word.toLowerCase());
         added++;
         if (chinese) withTranslation++;
@@ -1343,6 +1347,9 @@ async function batchTranslate() {
         }
       }
       saveWords(allWords);
+
+      // enrich phonetics from Free Dictionary API for this chunk
+      enrichWithDictPhonetics(chunk).catch(() => {});
 
       if (i + CHUNK < need.length) {
         showStatus('translate-status', `⏳ 已處理 ${translated} / ${need.length}…`, 'info');
@@ -1589,7 +1596,7 @@ function startStudy(all = false) {
   renderStudyList();
 
   if (document.getElementById('autoread-toggle').checked && pool.length > 0) {
-    setTimeout(() => speak(pool[0].word), 500);
+    setTimeout(() => speak(pool[0].word, pool[0].audioUrl), 500);
   }
 }
 
@@ -1607,7 +1614,7 @@ function renderStudyList() {
       index: i,
       showZh,
       showError: true,
-      actions: `<button class="btn-icon" onclick="speak('${escJs(w.word)}')" title="朗讀">🔊</button>`
+      actions: `<button class="btn-icon" onclick="speak('${escJs(w.word)}','${escJs(w.audioUrl||'')}')" title="朗讀">🔊</button>`
     })
   ).join('');
 
@@ -1615,7 +1622,16 @@ function renderStudyList() {
     studyWords.length >= 4 ? 'block' : 'none';
 }
 
-function speak(word) {
+function speak(word, audioUrl) {
+  if (audioUrl) {
+    const audio = new Audio(audioUrl);
+    audio.play().catch(() => speakFallback(word));
+    return;
+  }
+  speakFallback(word);
+}
+
+function speakFallback(word) {
   if (!('speechSynthesis' in window)) { alert('您的瀏覽器不支援語音朗讀'); return; }
   window.speechSynthesis.cancel();
   const utt = new SpeechSynthesisUtterance(word);
@@ -1623,6 +1639,56 @@ function speak(word) {
   utt.rate = 0.82;
   utt.pitch = 1;
   window.speechSynthesis.speak(utt);
+}
+
+async function fetchDictData(word) {
+  try {
+    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`, { signal: AbortSignal.timeout(4000) });
+    if (!res.ok) return null;
+    const data = await res.json();
+    if (!Array.isArray(data) || !data[0]) return null;
+    const entry = data[0];
+    const phonetics = entry.phonetics || [];
+    // prefer entry with both text and audio
+    const best = phonetics.find(p => p.text && p.audio) || phonetics.find(p => p.text) || phonetics[0] || {};
+    return { pronunciation: best.text || '', audioUrl: best.audio || '' };
+  } catch {
+    return null;
+  }
+}
+
+async function enrichWithDictPhonetics(words) {
+  const all = loadWords();
+  for (const w of words) {
+    const result = await fetchDictData(w.word);
+    if (!result) continue;
+    const target = all.find(x => x.word.toLowerCase() === w.word.toLowerCase());
+    if (!target) continue;
+    if (result.pronunciation) target.pronunciation = result.pronunciation;
+    if (result.audioUrl) target.audioUrl = result.audioUrl;
+  }
+  saveWords(all);
+}
+
+async function refreshAllPhonetics() {
+  const words = loadWords();
+  showStatus('phonetics-refresh-status', '⏳ 正在查詢字典音標，請稍候…', 'info');
+  let updated = 0;
+  for (let i = 0; i < words.length; i++) {
+    const w = words[i];
+    const result = await fetchDictData(w.word);
+    if (result) {
+      if (result.pronunciation) { w.pronunciation = result.pronunciation; updated++; }
+      if (result.audioUrl) w.audioUrl = result.audioUrl;
+    }
+    if ((i + 1) % 10 === 0) {
+      showStatus('phonetics-refresh-status', `⏳ 已處理 ${i + 1} / ${words.length}…`, 'info');
+      await new Promise(r => setTimeout(r, 500));
+    }
+  }
+  saveWords(words);
+  showStatus('phonetics-refresh-status', `✅ 完成：更新 ${updated} 個單字的音標`, 'success');
+  renderBank();
 }
 
 // ═══════════════════════════════════════════
@@ -1901,7 +1967,7 @@ function showResults() {
         showError: true,
         actions: `
           <span style="font-size:10px;color:var(--red);font-weight:600;">×${w.errorCount}</span>
-          <button class="btn-icon" onclick="speak('${escJs(w.word)}')" title="朗讀">🔊</button>`
+          <button class="btn-icon" onclick="speak('${escJs(w.word)}','${escJs(w.audioUrl||'')}')" title="朗讀">🔊</button>`
       })
     ).join('');
 
@@ -2068,7 +2134,7 @@ function renderBank() {
       try {
         return wordCardHTML(w, {
           showError: true,
-          actions: `<button class="btn-icon" onclick="speak('${escJs(w.word)}')" title="朗讀">🔊</button>
+          actions: `<button class="btn-icon" onclick="speak('${escJs(w.word)}','${escJs(w.audioUrl||'')}')" title="朗讀">🔊</button>
                     <button class="btn-icon" onclick="openZhEditor('${escJs(w.word)}')" title="編輯中文">✏️</button>
                     <button class="btn-icon" onclick="openTagEditor('${escJs(w.word)}')" title="編輯標籤">🏷</button>
                     <button class="btn-icon" onclick="confirmDeleteWord('${escJs(w.word)}')" title="刪除">🗑</button>`
@@ -2648,7 +2714,8 @@ function restoreFromJSON(text) {
     if (existingSet.has(word.toLowerCase())) { skipped++; continue; }
     existing.push({
       word, tag: w.tag || '', resource: w.resource || '',
-      chinese: w.chinese || '', errorCount: w.errorCount || 0, pronunciation: w.pronunciation || ''
+      chinese: w.chinese || '', errorCount: w.errorCount || 0, pronunciation: w.pronunciation || '',
+      pos: w.pos || '', audioUrl: w.audioUrl || ''
     });
     existingSet.add(word.toLowerCase());
     added++;
