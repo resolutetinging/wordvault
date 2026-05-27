@@ -1110,8 +1110,8 @@ async function batchTranslate() {
       const wStr  = chunk.map(w=>w.chinese?`${w.word} [中文：${w.chinese}]`:w.word).join('\n');
       const hasFull = chunk.some(w=>!w.chinese);
       const sys = hasFull
-        ? '你是英文字典助理。每行一個英文單字，回傳JSON物件：key=原單字，value含chinese(繁體中文含詞性前綴如"n.韌性")、pos(詞性縮寫)、pronunciation(美式IPA)。只輸出JSON。'
-        : '你是英文字典助理。補充pos和pronunciation。key=原單字(不含方括號)，value含pos和pronunciation。只輸出JSON。';
+        ? 'You are a dictionary API. Return ONLY a flat JSON object where each key is exactly the English word as provided, and each value is {chinese, pos, pronunciation}. chinese must be Traditional Chinese with POS prefix (e.g. "n.蘋果"). Do NOT wrap in any container key. Example: {"apple":{"chinese":"n.蘋果","pos":"n","pronunciation":"/ˈæpəl/"}}'
+        : 'You are a dictionary API. Return ONLY a flat JSON object where each key is exactly the English word (no brackets), and each value is {pos, pronunciation}. Do NOT wrap in any container key.';
 
       const resp = await groqFetch({
         model:'llama-3.3-70b-versatile', temperature:0.1, max_tokens:2000,
@@ -1127,6 +1127,25 @@ async function batchTranslate() {
       } catch { t={}; }
 
       function norm(s){return s.trim().replace(/\s+/g,' ').toLowerCase();}
+
+      // 自動解包：LLM 有時把結果包在 container key（如 {words:{...}} 或 {translations:{...}}）
+      {
+        const wordSet = new Set(chunk.map(w => norm(w.word)));
+        if (t && !Object.keys(t).some(k => wordSet.has(norm(k)))) {
+          for (const v of Object.values(t)) {
+            if (v && typeof v === 'object' && !Array.isArray(v) &&
+                Object.keys(v).some(k => wordSet.has(norm(k)))) {
+              t = v; break;
+            }
+          }
+        }
+      }
+
+      // 把 flat string 值轉成物件（如 LLM 回傳 {"apple":"蘋果"} 而非 {"apple":{...}}）
+      for (const [k, v] of Object.entries(t)) {
+        if (typeof v === 'string') t[k] = { chinese: v, pos: '', pronunciation: '' };
+      }
+
       const nm=new Map(Object.entries(t).map(([k,v])=>[norm(k),v]));
       const findT=w=>t[w]||t[w.toLowerCase()]||nm.get(norm(w))||null;
 
@@ -1134,8 +1153,12 @@ async function batchTranslate() {
       for (const w of all) {
         if (!chunk.find(c=>c.word===w.word)) continue;
         const f=findT(w.word); if(!f) continue;
-        if (!w.chinese) { w.chinese=f.chinese||''; w.pronunciation=f.pronunciation||''; w.pos=f.pos||''; autoTagByPos(w); translated++; }
-        else if (!w.pos) { w.pronunciation=f.pronunciation||w.pronunciation||''; w.pos=f.pos||''; autoTagByPos(w); translated++; }
+        if (!w.chinese) {
+          const zh = String(f.chinese||'').trim();
+          if (zh) { w.chinese=zh; w.pronunciation=String(f.pronunciation||'').trim(); w.pos=String(f.pos||'').trim(); autoTagByPos(w); translated++; }
+        } else if (!w.pos) {
+          w.pronunciation=String(f.pronunciation||w.pronunciation||'').trim(); w.pos=String(f.pos||'').trim(); autoTagByPos(w); translated++;
+        }
       }
       saveWords(all);
       if (i+CHUNK<need.length) {
