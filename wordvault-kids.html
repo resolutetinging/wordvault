@@ -1013,11 +1013,12 @@ function toggleVis(id, btn) {
 }
 function saveApiKey() {
   const val = document.getElementById('api-key-input').value.trim();
-  if (!val) { alert('請輸入 API Key'); return; }
+  if (!val) { showStatus('translate-status','請輸入 Groq API Key（gsk_ 開頭）','error'); return; }
+  if (!val.startsWith('gsk_')) { showStatus('translate-status','Key 格式錯誤，應以 gsk_ 開頭','error'); return; }
   localStorage.setItem(GROQ_KEY_STORAGE, val);
   document.getElementById('api-key-input').value = '';
   refreshApiKeyUI();
-  showStatus('translate-status','✅ Groq API Key 已儲存','success');
+  showStatus('translate-status','✅ Groq API Key 已儲存！點「✨ 開始 AI 翻譯」即可翻譯','success');
 }
 function clearApiKey() {
   if (!confirm('確定要清除 Groq API Key？')) return;
@@ -1031,7 +1032,17 @@ function refreshApiKeyUI() {
 }
 function toggleApiKey() {
   const el = document.getElementById('apikey-section');
-  el.style.display = el.style.display==='none' ? 'block' : 'none';
+  const opening = el.style.display === 'none' || el.style.display === '';
+  el.style.display = opening ? 'block' : 'none';
+  if (opening) {
+    // 確保 AI 區塊已展開
+    const body = document.getElementById('ai-body');
+    if (body && body.classList.contains('collapsed')) {
+      toggleCard('ai-body', 'ai-arrow');
+    }
+    // 若 key 未設定，聚焦輸入框
+    if (!getApiKey()) setTimeout(() => { const inp = document.getElementById('api-key-input'); if(inp) inp.focus(); }, 50);
+  }
 }
 
 function repairJSON(str) {
@@ -1057,12 +1068,14 @@ async function batchTranslate() {
   const needFull= words.filter(w=>!String(w.chinese||'').trim());
   const needPos = words.filter(w=>String(w.chinese||'').trim()&&!w.pos);
   const need    = [...needFull,...needPos];
-  if (!need.length) { showStatus('translate-status','所有單字都已有翻譯 ✓','success'); return; }
+  if (!words.length) { showStatus('translate-status','單字庫是空的，請先在上方匯入單字 📥','error'); return; }
+  if (!need.length) { showStatus('translate-status','所有單字都已有翻譯了 ✓','success'); return; }
 
   const apiKey = getApiKey();
   if (!apiKey) {
-    showStatus('translate-status','請先展開設定並儲存 Groq API Key','error');
-    document.getElementById('apikey-section').style.display='block'; return;
+    showStatus('translate-status','請先點「⚙️ 設定 Groq API Key」並儲存 Key','error');
+    document.getElementById('apikey-section').style.display='block';
+    toggleApiKey(); return;
   }
 
   const btn = document.getElementById('translate-btn');
@@ -1130,9 +1143,13 @@ async function batchTranslate() {
         await new Promise(r=>setTimeout(r,2000));
       }
     }
-    showStatus('translate-status',`✅ 完成！處理 ${translated} 個單字`,'success');
+    if (translated > 0) {
+      showStatus('translate-status',`✅ 翻譯完成！共處理 ${translated} 個單字，可到「閃卡」或「單字庫」查看結果 🎉`,'success');
+    } else {
+      showStatus('translate-status','⚠️ 翻譯完成但未更新任何單字，請確認 API Key 正確且單字庫有未翻譯的單字','error');
+    }
   } catch(err) {
-    showStatus('translate-status',`❌ ${err.message}`,'error');
+    showStatus('translate-status',`❌ 錯誤：${err.message}（請確認 API Key 正確、網路正常）`,'error');
   } finally {
     btn.innerHTML='✨ 開始 AI 翻譯'; btn.disabled=false; updateGlobalCount();
   }
