@@ -40,7 +40,7 @@
 
     /* ── HEADER ── */
     .app-header {
-      background: linear-gradient(120deg, #C4896A 0%, #C8B47C 42%, #8AAE90 72%, #82A8C4 100%);
+      background: linear-gradient(120deg, #FF8C42 0%, #FFD93D 45%, #5CB85C 75%, #5BC8F5 100%);
       padding: 16px 20px 0;
       position: sticky; top: 0; z-index: 100;
       box-shadow: 0 4px 18px rgba(0,0,0,0.2);
@@ -1356,7 +1356,8 @@ function renderCard() {
 
   // Front
   document.getElementById('fc-word').textContent=w.word;
-  document.getElementById('fc-pron').textContent=(()=>{const p=stripSlashes(w.pronunciation);return p?`/${p}/`:''})();
+  const _pron=stripSlashes(w.pronunciation);
+  document.getElementById('fc-pron').textContent=_pron?`/${_pron}/`:'';
 
   // Back
   const zh = w.chinese ? stripPosPrefix(String(w.chinese),w.pos) : '（尚未翻譯）';
@@ -1864,11 +1865,12 @@ function renderBank() {
   const cards=paged.map(w=>{
     const res=(w.resource||'').split(',').map(r=>cleanStr(r)).filter(Boolean)
       .map(r=>`<span class="bank-res">${escHtml(r)}</span>`).join(' ');
+    const _wp=stripSlashes(w.pronunciation);
     return `
       <div class="bank-word-card">
         <div>
           <div class="bank-en">${escHtml(w.word)}${w.pos?`<span class="bank-pos">${escHtml(w.pos)}</span>`:''}</div>
-          ${(p=>p?`<div class="bank-pron">/${escHtml(p)}/</div>`:''')(stripSlashes(w.pronunciation))}
+          ${_wp?`<div class="bank-pron">/${escHtml(_wp)}/</div>`:''}
           <div class="bank-zh">${escHtml(w.chinese||'（尚未翻譯）')}</div>
           ${res?`<div style="margin-top:4px;">${res}</div>`:''}
           ${w.errorCount?`<div class="bank-err">❌ 錯 ${w.errorCount} 次</div>`:''}
