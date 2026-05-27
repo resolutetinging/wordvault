@@ -816,7 +816,7 @@ function updateGlobalCount() {
 //  UTILITIES
 // ═══════════════════════════════════════════
 function cleanStr(s) {
-  return (s || '').replace(/[ - ​‌‍﻿  ]/g,'').trim();
+  return (s || '').replace(/[\u0000-\u001F\u007F\u00A0\u200B\u200C\u200D\uFEFF\u2028\u2029]/g, '').trim();
 }
 function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
