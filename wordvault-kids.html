@@ -1045,6 +1045,7 @@ function toggleApiKey() {
   }
 }
 
+function stripSlashes(s) { return String(s||'').trim().replace(/^\/+|\/+$/g,''); }
 function repairJSON(str) {
   let s = str.replace(/,\s*$/,'').trim();
   let br=0, bk=0, inStr=false, esc=false;
@@ -1155,9 +1156,9 @@ async function batchTranslate() {
         const f=findT(w.word); if(!f) continue;
         if (!w.chinese) {
           const zh = String(f.chinese||'').trim();
-          if (zh) { w.chinese=zh; w.pronunciation=String(f.pronunciation||'').trim(); w.pos=String(f.pos||'').trim(); autoTagByPos(w); translated++; }
+          if (zh) { w.chinese=zh; w.pronunciation=stripSlashes(f.pronunciation); w.pos=String(f.pos||'').trim(); autoTagByPos(w); translated++; }
         } else if (!w.pos) {
-          w.pronunciation=String(f.pronunciation||w.pronunciation||'').trim(); w.pos=String(f.pos||'').trim(); autoTagByPos(w); translated++;
+          w.pronunciation=stripSlashes(f.pronunciation||w.pronunciation); w.pos=String(f.pos||'').trim(); autoTagByPos(w); translated++;
         }
       }
       saveWords(all);
@@ -1359,7 +1360,7 @@ function renderCard() {
 
   // Front
   document.getElementById('fc-word').textContent=w.word;
-  document.getElementById('fc-pron').textContent=w.pronunciation?`/${w.pronunciation}/`:'';
+  document.getElementById('fc-pron').textContent=(()=>{const p=stripSlashes(w.pronunciation);return p?`/${p}/`:''})();
 
   // Back
   const zh = w.chinese ? stripPosPrefix(String(w.chinese),w.pos) : '（尚未翻譯）';
@@ -1871,7 +1872,7 @@ function renderBank() {
       <div class="bank-word-card">
         <div>
           <div class="bank-en">${escHtml(w.word)}${w.pos?`<span class="bank-pos">${escHtml(w.pos)}</span>`:''}</div>
-          ${w.pronunciation?`<div class="bank-pron">/${escHtml(w.pronunciation)}/</div>`:''}
+          ${(p=>p?`<div class="bank-pron">/${escHtml(p)}/</div>`:''')(stripSlashes(w.pronunciation))}
           <div class="bank-zh">${escHtml(w.chinese||'（尚未翻譯）')}</div>
           ${res?`<div style="margin-top:4px;">${res}</div>`:''}
           ${w.errorCount?`<div class="bank-err">❌ 錯 ${w.errorCount} 次</div>`:''}
