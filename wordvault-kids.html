@@ -50,7 +50,7 @@
     .word-count-badge { font-size: 13px; color: rgba(255,255,255,0.9); margin-top: 3px; font-weight: 600; }
     .nav { display: flex; margin-top: 12px; gap: 3px; }
     .nav-btn {
-      flex: 1; background: rgba(255,255,255,0.22); border: none; color: white;
+      flex: 1; background: rgba(255,255,255,0.55); border: none; color: rgba(0,0,0,0.68);
       padding: 10px 4px 8px; font-family: inherit; cursor: pointer;
       border-radius: 14px 14px 0 0; transition: all 0.2s;
       display: flex; flex-direction: column; align-items: center; gap: 2px;
@@ -58,7 +58,7 @@
     .nav-btn .nav-emoji { font-size: 22px; line-height: 1; }
     .nav-btn .nav-label { font-size: 11px; font-weight: 700; letter-spacing: 0.3px; }
     .nav-btn.active { background: white; color: var(--orange); }
-    .nav-btn:not(.active):hover { background: rgba(255,255,255,0.38); }
+    .nav-btn:not(.active):hover { background: rgba(255,255,255,0.75); }
 
     /* ── SCREENS ── */
     .screen { display: none; padding: 16px; animation: fadeIn 0.25s ease; }
@@ -792,7 +792,7 @@ const STORAGE_KEY      = 'wordvault_v1-kids';
 const GROQ_KEY_STORAGE = 'wordvault_groq_key-kids';
 const BACKUP_TS_KEY    = 'wordvault_last_backup-kids';
 const LAST_TAB_KEY     = 'wordvault_last_tab-kids';
-const PRESET_TAGS      = ['phrase', 'sentence'];
+const PRESET_TAGS      = [];
 
 // ═══════════════════════════════════════════
 //  DATA LAYER
@@ -850,11 +850,7 @@ function normalizeWordCase(w) {
   if (/[A-Z]/.test(w.slice(1))) return w;
   return w[0].toLowerCase() + w.slice(1);
 }
-function autoTagByPos(w) {
-  if ((w.pos||'').toLowerCase() !== 'phrase') return;
-  const parts = (w.resource||'').split(',').map(r=>r.trim()).filter(Boolean);
-  if (!parts.includes('phrase')) w.resource = [...parts,'phrase'].join(',');
-}
+function autoTagByPos(w) { /* phrase/sentence 自動標籤已移除 */ }
 function appendResources(entry, newRes) {
   if (!newRes || !newRes.length) return;
   const ex = (entry.resource||'').split(',').map(r=>r.trim()).filter(Boolean);
@@ -1951,7 +1947,6 @@ function toggleCard(bodyId, arrowId) {
       if (w.imageUrl===undefined){w.imageUrl='';dirty=true;}
       if (w.chinese!==undefined&&typeof w.chinese!=='string'){w.chinese=String(w.chinese);dirty=true;}
       if (w.chinese&&!String(w.chinese).trim()){w.chinese='';dirty=true;}
-      const before=w.resource; autoTagByPos(w); if(w.resource!==before) dirty=true;
     }
     if (dirty) saveWords(words);
   } catch(e){console.warn('kids migration error:',e);}
