@@ -959,6 +959,7 @@
         <div style="font-size:18px;font-weight:900">成長追蹤</div>
         <button class="btn-icon" onclick="closeEggLock()">✕</button>
       </div>
+      <div id="threshold-settings"></div>
       <div id="analytics-body"></div>
       <div id="groq-advice-area"></div>
       <div style="text-align:center;margin-top:16px">
@@ -1845,13 +1846,26 @@ function showResults() {
   const used=totalSeconds-secondsLeft;
   const m=Math.floor(used/60), s=used%60;
 
-  // Save quiz log for current kid
-  if (curKidId) {
+  // Save quiz log + threshold-based point earning
+  let _earnedStar = false;
+  if (curKidId && hp > 0 && total > 0) {
     const _profs = loadProfiles();
     const _k = _profs.find(p=>p.id===curKidId);
     if (_k) {
       if (!_k.quizLog) _k.quizLog=[];
-      _k.quizLog.push({date:new Date().toISOString().slice(0,10),pct,total:total,correct,wrong});
+      _k.quizLog.push({date:new Date().toISOString().slice(0,10),pct,total,correct,wrong});
+      if (_k.quizLog.length>30) _k.quizLog.shift();
+      saveProfiles(_profs);
+      const threshold = _k.threshold ?? 80;
+      if (pct >= threshold) { _earnedStar=true; addKidStar3(); }
+    }
+  } else if (curKidId) {
+    // still save log even if hp=0
+    const _profs = loadProfiles();
+    const _k = _profs.find(p=>p.id===curKidId);
+    if (_k) {
+      if (!_k.quizLog) _k.quizLog=[];
+      _k.quizLog.push({date:new Date().toISOString().slice(0,10),pct,total,correct,wrong});
       if (_k.quizLog.length>30) _k.quizLog.shift();
       saveProfiles(_profs);
     }
@@ -1859,19 +1873,18 @@ function showResults() {
   // Medal & title
   let medal='', title='';
   if (hp<=0)       { medal='💔'; title='別灰心，再努力一次！'; }
-  else if (pct>=90){ medal='🏆'; title='單字超人！太厲害了！'; launchConfetti();
-    // 100% triggers treasure chest
-    if (pct===100 && curKidId) {
-      const _ps=loadProfiles(); const _ck=_ps.find(p=>p.id===curKidId);
-      if(_ck) setTimeout(()=>showTreasureChest(_ck), 2500);
-    }
-  }
+  else if (pct>=90){ medal='🏆'; title='單字超人！太厲害了！'; launchConfetti(); }
   else if (pct>=70){ medal='🥇'; title='單字小勇士！好棒！';  launchConfetti(); }
   else if (pct>=50){ medal='🥈'; title='繼續加油！快到了！'; }
   else             { medal='📚'; title='多練習就會進步的！'; }
   document.getElementById('quiz-medal').textContent       = medal;
   document.getElementById('quiz-medal-title').textContent = title;
 
+  const kidForStar = curKidId ? loadProfiles().find(p=>p.id===curKidId) : null;
+  const thresholdLine = kidForStar
+    ? `<div class="result-stat"><span>集點門檻</span><span class="result-val" style="font-size:15px">${kidForStar.threshold??80}%</span></div>` : '';
+  const starLine = _earnedStar
+    ? `<div style="text-align:center;margin:10px 0;font-size:16px;font-weight:800;color:var(--orange-dk);background:var(--yellow-lt);border-radius:12px;padding:10px">⭐ +1 集點！（已累積 ${kidForStar?.stars3||0} 點）</div>` : '';
   document.getElementById('result-stats').innerHTML = `
     <div class="result-stat"><span>作答題數</span><span class="result-val">${total}</span></div>
     <div class="result-stat"><span>答對</span><span class="result-val good">${correct}</span></div>
@@ -1879,7 +1892,8 @@ function showResults() {
     <div class="result-stat"><span>正確率</span><span class="result-val ${pct>=70?'good':'bad'}">${pct}%</span></div>
     <div class="result-stat"><span>剩餘生命</span><span class="result-val">${'❤️'.repeat(hp)}${'🖤'.repeat(3-hp)}</span></div>
     <div class="result-stat"><span>用時</span><span class="result-val">${m}分${s}秒</span></div>
-  `;
+    ${thresholdLine}
+  ` + starLine;
 
   const unique=[...new Map(wrongWords.map(w=>[w.word,w])).values()];
   if (unique.length>0) {
@@ -2369,7 +2383,7 @@ function showTreasureChest(kid) {
   _pendingChestKid = kid;
   document.getElementById('chest-icon').textContent='🎁';
   document.getElementById('chest-title').textContent=`🎁 ${escHtml(kid.name)}，恭喜！`;
-  document.getElementById('chest-sub').textContent=`已累積 ${kid.stars3} 個完美跟讀！\n點開寶箱看看得到什麼！`;
+  document.getElementById('chest-sub').textContent=`已累積 ${kid.stars3} 個集點！點開寶箱看看得到什麼！`;
   document.getElementById('sticker-reveal-area').style.display='none';
   document.getElementById('chest-open-btn').style.display='block';
   document.getElementById('chest-ov').classList.add('show');
@@ -2458,8 +2472,6 @@ function renderStickersScreen() {
     const pool = getKidPool(kid);
     const owned = new Set(kid.stickers.map(s => s.id));
     const pct = Math.round(owned.size / pool.length * 100);
-    const targetLine = kid.target
-      ? `<div class="sticker-kid-target">🎯 ${escHtml(kid.target)}</div>` : '';
     const miniCells = pool.map(s => {
       const is = owned.has(s.id);
       return `<div class="sticker-mini-cell ${is?'':'locked'}" title="${escHtml(s.label)}">${s.emoji}</div>`;
@@ -2467,11 +2479,8 @@ function renderStickersScreen() {
     return `
       <div class="sticker-kid-card">
         <div class="sticker-kid-hd">
-          <div>
-            <div class="sticker-kid-name">${escHtml(kid.name)}</div>
-            ${targetLine}
-          </div>
-          <button class="btn btn-outline btn-sm" onclick="curKidId='${escJs(kid.id)}';renderKidSelector();showStickerAlbum()">查看完整</button>
+          <div class="sticker-kid-name">${escHtml(kid.name)}</div>
+          <button class="btn-icon" title="查看全部貼紙" onclick="curKidId='${escJs(kid.id)}';renderKidSelector();showStickerAlbum()" style="font-size:16px;width:36px;height:36px;">🗂</button>
         </div>
         <div class="sticker-kid-stats">
           <span class="sticker-stat-pill">⭐ ${kid.stars3||0} 次跟讀</span>
@@ -2577,31 +2586,88 @@ function resetParentPwd() {
 // ══════════════════════════════════════════════════════
 //  v2: ANALYTICS
 // ══════════════════════════════════════════════════════
+function renderThresholdSettings(profiles) {
+  const el=document.getElementById('threshold-settings'); if(!el||!profiles.length) return;
+  el.innerHTML=`
+    <div style="margin-bottom:16px;padding:14px 16px;background:var(--blue-lt);border-radius:14px;border:1.5px solid #c8d8e8">
+      <div style="font-size:12px;font-weight:800;color:#1060a0;margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px">集點門檻設定</div>
+      ${profiles.map(kid=>`
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--ink)">
+          <span style="min-width:56px;font-weight:800">${escHtml(kid.name)}</span>
+          <span>答對</span>
+          <input type="number" min="1" max="100" value="${kid.threshold??80}"
+            style="width:58px;font-size:14px;text-align:center;padding:4px 6px;border:1.5px solid var(--border);border-radius:8px;font-weight:700;"
+            onchange="saveThreshold('${escJs(kid.id)}',this.value)" />
+          <span>% 以上可集點</span>
+        </div>`).join('')}
+    </div>`;
+}
+function saveThreshold(kidId, val) {
+  const n=Math.max(1,Math.min(100,parseInt(val)||80));
+  const profiles=loadProfiles(); const kid=profiles.find(p=>p.id===kidId);
+  if(kid){kid.threshold=n;saveProfiles(profiles);}
+}
+
 function renderAnalytics() {
   const profiles=loadProfiles();
   const allWords=loadWords();
+  const total=allWords.length;
+  const neverWrong=allWords.filter(w=>!w.errorCount).length;
+  const occasional=allWords.filter(w=>w.errorCount>=1&&w.errorCount<=2).length;
+  const chronic=allWords.filter(w=>w.errorCount>=3).length;
   const topErrors=[...allWords].filter(w=>w.errorCount>0).sort((a,b)=>b.errorCount-a.errorCount).slice(0,5);
+
+  // Render threshold settings first
+  renderThresholdSettings(profiles);
+
   let html='';
+  // Global word stats (shared across kids)
+  if(total>0){
+    html+=`<div style="margin-bottom:18px;padding-bottom:16px;border-bottom:2px solid var(--border)">
+      <div style="font-size:12px;font-weight:800;color:var(--ink2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:10px">單字庫綜合評估</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <div style="background:var(--green-lt);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:22px;font-weight:900;color:var(--green-dk)">${total}</div>
+          <div style="font-size:11px;color:var(--green-dk);font-weight:700">總單字量</div>
+        </div>
+        <div style="background:var(--blue-lt);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:22px;font-weight:900;color:var(--blue-dk)">${neverWrong}</div>
+          <div style="font-size:11px;color:var(--blue-dk);font-weight:700">從未出錯 (${total?Math.round(neverWrong/total*100):0}%)</div>
+        </div>
+        <div style="background:var(--yellow-lt);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:22px;font-weight:900;color:var(--orange-dk)">${occasional}</div>
+          <div style="font-size:11px;color:var(--orange-dk);font-weight:700">偶爾出錯 (1-2次)</div>
+        </div>
+        <div style="background:var(--red-lt);border-radius:10px;padding:10px;text-align:center">
+          <div style="font-size:22px;font-weight:900;color:var(--red)">${chronic}</div>
+          <div style="font-size:11px;color:var(--red);font-weight:700">慣性失誤 (3次+)</div>
+        </div>
+      </div>
+      ${topErrors.length?`
+        <div style="font-size:11px;font-weight:800;color:var(--ink2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">高頻錯誤 Top 5</div>
+        ${topErrors.map(w=>`<div class="err-word-row">
+          <div><div style="font-size:15px;font-weight:800">${escHtml(w.word)}</div><div style="font-size:12px;color:var(--ink2)">${escHtml(w.chinese||'')}</div></div>
+          <div style="font-size:13px;font-weight:700;color:var(--red)">錯 ${w.errorCount} 次</div></div>`).join('')}`:''}
+    </div>`;
+  }
+
   for(const kid of profiles){
     const log=kid.quizLog||[];
     const avgAcc=log.length?Math.round(log.reduce((s,l)=>s+(l.pct||0),0)/log.length):null;
-    html+=`<div style="margin-bottom:20px;padding-bottom:18px;border-bottom:2px solid var(--border)">
-      <div style="font-size:17px;font-weight:900;margin-bottom:10px">${kid.avatar} ${escHtml(kid.name)}</div>
-      <div style="font-size:12px;color:var(--ink2);font-weight:700;margin-bottom:4px">累積完美跟讀：${kid.stars3||0} 次 ⭐ &nbsp;｜&nbsp; 貼紙：${kid.stickers.length} 張</div>`;
+    const recent5=log.slice(-5);
+    const trend=recent5.map(l=>`<span style="display:inline-block;background:${l.pct>=(kid.threshold??80)?'var(--green-lt)':'var(--red-lt)'};color:${l.pct>=(kid.threshold??80)?'var(--green-dk)':'var(--red)'};border-radius:6px;padding:2px 6px;font-size:11px;font-weight:700">${l.pct}%</span>`).join(' ');
+    html+=`<div style="margin-bottom:18px;padding-bottom:16px;border-bottom:2px solid var(--border)">
+      <div style="font-size:17px;font-weight:900;margin-bottom:8px">${escHtml(kid.name)}</div>
+      <div style="font-size:12px;color:var(--ink2);font-weight:700;margin-bottom:10px">⭐ 累積集點 ${kid.stars3||0} 點 &nbsp;·&nbsp; 🗂 貼紙 ${(kid.stickers||[]).length} 張</div>`;
     if(avgAcc!==null){
-      html+=`<div style="margin:10px 0 14px"><div style="font-size:12px;color:var(--ink2);font-weight:700;margin-bottom:4px">平均闖關正確率（${log.length} 次）</div>
+      html+=`<div style="margin-bottom:10px">
+        <div style="font-size:12px;color:var(--ink2);font-weight:700;margin-bottom:4px">闖關平均正確率（共 ${log.length} 次）</div>
         <div class="acc-bar-wrap"><div class="acc-bar-fill" style="width:${avgAcc}%"></div></div>
-        <div style="font-size:12px;color:var(--ink2);margin-top:3px;font-weight:600">${avgAcc}%</div></div>`;
+        <div style="font-size:12px;color:var(--ink2);margin-top:3px;font-weight:600">${avgAcc}%</div>
+        ${trend?`<div style="margin-top:6px;font-size:11px;color:var(--ink2);font-weight:600">近 5 次：${trend}</div>`:''}
+      </div>`;
     } else {
-      html+=`<div style="font-size:13px;color:var(--ink2);margin:8px 0 14px">尚無闖關記錄</div>`;
-    }
-    html+=`<div style="font-size:11px;font-weight:800;color:var(--ink2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">答錯魔王 Top 5</div>`;
-    if(topErrors.length){
-      html+=topErrors.map(w=>`<div class="err-word-row">
-        <div><div style="font-size:16px;font-weight:800">${escHtml(w.word)}</div><div style="font-size:12px;color:var(--ink2)">${escHtml(w.chinese||'')}</div></div>
-        <div style="font-size:14px;font-weight:700;color:var(--red)">錯 ${w.errorCount} 次</div></div>`).join('');
-    } else {
-      html+='<div style="font-size:13px;color:var(--ink2);padding:6px 0">目前沒有錯誤記錄</div>';
+      html+=`<div style="font-size:13px;color:var(--ink2);margin-bottom:10px">尚無闖關記錄</div>`;
     }
     html+='</div>';
   }
@@ -2618,7 +2684,9 @@ async function genGroqAdvice(profiles,allWords) {
   }
   const topErr=[...allWords].filter(w=>w.errorCount>0).sort((a,b)=>b.errorCount-a.errorCount).slice(0,5);
   const errList=topErr.map(w=>`${w.word}（錯${w.errorCount}次）`).join('、');
-  const prompt=`你是一位溫暖的兒童英文學習顧問。以下是小學生的英文學習數據：\n- 共 ${allWords.length} 個單字，常錯：${errList||'目前無記錄'}\n- 共 ${profiles.length} 位孩子\n\n請用繁體中文給家長 3 條溫暖實用的親職建議，幫助孩子改善英文學習。語氣輕鬆，每條 ≤ 30 字，直接輸出條列，無需標題。`;
+  const neverWrong=allWords.filter(w=>!w.errorCount).length;
+  const chronic=allWords.filter(w=>w.errorCount>=3).length;
+  const prompt=`你是一位溫暖的兒童英文學習顧問。以下是小學生的英文學習數據：\n- 總單字量 ${allWords.length} 個，從未出錯 ${neverWrong} 個，慣性失誤 ${chronic} 個\n- 高頻錯誤：${errList||'目前無記錄'}\n- 共 ${profiles.length} 位孩子\n\n請用繁體中文給家長 3 條溫暖實用的親職建議，幫助孩子改善英文學習。語氣輕鬆，每條 ≤ 30 字，直接輸出條列，無需標題。`;
   try{
     const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',
