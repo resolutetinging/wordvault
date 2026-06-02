@@ -452,16 +452,27 @@
     .ex-tts-btn{background:var(--green-lt);border:2px solid var(--green);border-radius:10px;padding:5px 12px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:700;color:var(--green-dk);transition:all .15s}
     .ex-tts-btn:hover{background:var(--green);color:white}
 
-    /* ── v2: Kid Selector ── */
-    .kid-selector{position:relative}
-    .kid-selector-btn{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.3);border:2px solid rgba(255,255,255,.5);border-radius:14px;padding:7px 12px;font-family:inherit;cursor:pointer;font-size:13px;font-weight:700;color:white;transition:all .18s;white-space:nowrap}
-    .kid-selector-btn:hover{background:rgba(255,255,255,.45)}
-    .kid-menu{position:absolute;right:0;top:calc(100% + 8px);background:white;border-radius:18px;padding:10px 8px;box-shadow:0 8px 32px rgba(0,0,0,.18);min-width:180px;z-index:300;border:2.5px solid var(--border)}
-    .kid-menu-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;cursor:pointer;font-size:14px;font-weight:700;transition:background .15s;border:none;background:none;width:100%;font-family:inherit;color:var(--ink);text-align:left}
-    .kid-menu-item:hover{background:var(--blue-lt)}
-    .kid-menu-item.active{background:var(--yellow-lt);color:var(--orange-dk)}
-    .kid-stars-badge{font-size:11px;background:var(--yellow-lt);color:var(--orange-dk);border-radius:8px;padding:2px 7px;margin-left:auto;font-weight:800}
-    .kid-menu-divider{height:1.5px;background:var(--border);margin:6px 0}
+    /* ── v2: Kid Selector (big block) ── */
+    .kid-bar{padding:8px 16px 0;display:flex;align-items:center;gap:8px;overflow-x:auto;scrollbar-width:none}
+    .kid-bar::-webkit-scrollbar{display:none}
+    .kid-bar-label{font-size:11px;font-weight:800;color:rgba(255,255,255,.7);letter-spacing:.5px;white-space:nowrap;flex-shrink:0}
+    .kid-chip{display:flex;align-items:center;gap:6px;padding:8px 16px;background:rgba(255,255,255,.22);border:2px solid rgba(255,255,255,.4);border-radius:20px;cursor:pointer;font-family:inherit;font-size:14px;font-weight:800;color:white;white-space:nowrap;transition:all .18s;flex-shrink:0}
+    .kid-chip:hover{background:rgba(255,255,255,.38)}
+    .kid-chip.active{background:white;color:var(--orange-dk);border-color:white;box-shadow:0 3px 12px rgba(0,0,0,.15)}
+    .kid-chip-stars{font-size:11px;background:rgba(255,200,0,.25);border-radius:8px;padding:1px 6px;font-weight:700}
+    .kid-chip.active .kid-chip-stars{background:var(--yellow-lt);color:var(--orange-dk)}
+    .kid-add-chip{background:rgba(255,255,255,.12);border:2px dashed rgba(255,255,255,.4);border-radius:20px;padding:8px 14px;cursor:pointer;font-family:inherit;font-size:13px;font-weight:700;color:rgba(255,255,255,.8);white-space:nowrap;flex-shrink:0;transition:all .18s}
+    .kid-add-chip:hover{background:rgba(255,255,255,.25);color:white}
+    /* Sticker Screen */
+    .sticker-kid-card{background:var(--surface);border-radius:var(--radius);padding:18px;margin-bottom:14px;box-shadow:var(--shadow);border:2.5px solid var(--yellow)}
+    .sticker-kid-hd{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+    .sticker-kid-name{font-size:18px;font-weight:900;color:var(--ink)}
+    .sticker-kid-target{font-size:12px;color:var(--orange-dk);font-weight:700;margin-top:2px}
+    .sticker-kid-stats{display:flex;gap:10px;margin-bottom:12px}
+    .sticker-stat-pill{background:var(--yellow-lt);border-radius:10px;padding:5px 12px;font-size:12px;font-weight:800;color:var(--orange-dk)}
+    .sticker-mini-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px}
+    .sticker-mini-cell{text-align:center;font-size:22px;line-height:1.2;background:var(--bg);border-radius:10px;padding:6px 2px}
+    .sticker-mini-cell.locked{opacity:.2;filter:grayscale(1)}
 
     /* ── v2: Treasure Chest ── */
     .chest-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:center;justify-content:center;padding:24px}
@@ -515,14 +526,10 @@
       <div class="app-title">🌈 WordVault Kids</div>
       <div class="word-count-badge" id="global-count">載入中…</div>
     </div>
-    <div class="kid-selector" id="kid-selector-wrap">
-      <button class="kid-selector-btn" onclick="toggleKidMenu()">
-        <span id="kid-avatar-display" style="font-size:20px;line-height:1">🐣</span>
-        <span id="kid-name-display">選小朋友</span>
-        <span style="font-size:10px;opacity:.7">▾</span>
-      </button>
-      <div class="kid-menu" id="kid-menu" style="display:none"></div>
-    </div>
+  </div>
+  <!-- Kid selector bar -->
+  <div class="kid-bar" id="kid-bar">
+    <!-- rendered by renderKidSelector() -->
   </div>
   <nav class="nav">
     <button class="nav-btn active" onclick="showScreen('import',this)">
@@ -533,6 +540,9 @@
     </button>
     <button class="nav-btn" onclick="showScreen('quiz',this)">
       <span class="nav-emoji">🎯</span><span class="nav-label">闖關</span>
+    </button>
+    <button class="nav-btn" onclick="showScreen('stickers',this)">
+      <span class="nav-emoji">⭐</span><span class="nav-label">集點</span>
     </button>
     <button class="nav-btn" onclick="showScreen('bank',this)">
       <span class="nav-emoji">🗂</span><span class="nav-label">單字庫</span>
@@ -828,6 +838,14 @@
 
 </section>
 
+<!-- ═══════════════ STICKERS ═══════════════ -->
+<section class="screen" id="screen-stickers">
+  <div id="stickers-list"></div>
+  <div style="text-align:center;padding:16px 0 24px;font-size:12.5px;color:var(--ink2);font-weight:600;line-height:1.8">
+    💡 每累積 5 個完美跟讀 🌟🌟🌟 或 100 分滿分，即可開寶箱解鎖新貼紙！
+  </div>
+</section>
+
 </main>
 
 <!-- Confirm Dialog -->
@@ -890,10 +908,7 @@
     <h3>➕ 新增小朋友</h3>
     <p>填完後 AI 會幫你生成專屬貼紙！</p>
     <label>名字</label>
-    <input type="text" id="new-kid-name" placeholder="例：小明…" style="margin-bottom:12px;" maxlength="10" />
-    <label>表情符號（頭像）</label>
-    <input type="text" id="new-kid-avatar" placeholder="例：👦 👧 🐱 🐶" maxlength="4" style="font-size:22px;text-align:center;" />
-    <div style="font-size:11px;color:var(--ink2);margin-top:4px;margin-bottom:12px">貼上一個你喜歡的 emoji！</div>
+    <input type="text" id="new-kid-name" placeholder="例：小明、小華…" style="margin-bottom:12px;" maxlength="10" />
     <label>🎯 集點目標（集滿點可以得到什麼？）</label>
     <input type="text" id="new-kid-target" placeholder="例：想要一個恐龍玩具、想去動物園…" style="margin-bottom:6px;" maxlength="40" />
     <div style="font-size:11px;color:var(--ink2);margin-bottom:10px;line-height:1.6">填入目標後，AI 會幫你生成 12 個專屬主題貼紙 ✨</div>
@@ -1075,9 +1090,10 @@ function _doShowScreen(name, btn) {
   document.getElementById('screen-'+name).classList.add('active');
   if (btn) btn.classList.add('active');
   localStorage.setItem(LAST_TAB_KEY, name);
-  if (name==='study')  { renderStudyResourceFilter(); }
-  if (name==='quiz')   { renderQuizResourceFilter(); }
-  if (name==='bank')   { renderBankResourceFilter(); renderBank(); }
+  if (name==='study')    { renderStudyResourceFilter(); }
+  if (name==='quiz')     { renderQuizResourceFilter(); }
+  if (name==='bank')     { renderBankResourceFilter(); renderBank(); }
+  if (name==='stickers') { renderStickersScreen(); }
 }
 
 // ═══════════════════════════════════════════
@@ -1302,8 +1318,8 @@ async function batchTranslate() {
       const wStr  = chunk.map(w=>w.chinese?`${w.word} [中文：${w.chinese}]`:w.word).join('\n');
       const hasFull = chunk.some(w=>!w.chinese);
       const sys = hasFull
-        ? 'You are a dictionary API. Return ONLY a flat JSON object where each key is exactly the English word as provided, and each value is {chinese, pos, pronunciation}. chinese must be Traditional Chinese with POS prefix (e.g. "n.蘋果"). Do NOT wrap in any container key. Example: {"apple":{"chinese":"n.蘋果","pos":"n","pronunciation":"/ˈæpəl/"}}'
-        : 'You are a dictionary API. Return ONLY a flat JSON object where each key is exactly the English word (no brackets), and each value is {pos, pronunciation}. Do NOT wrap in any container key.';
+        ? 'You are a dictionary API. Return ONLY a flat JSON object where each key is exactly the English word as provided, and each value is {chinese, pos, pronunciation, emoji}. chinese must be Traditional Chinese with POS prefix (e.g. "n.蘋果"). emoji must be a single emoji that visually represents the word (e.g. "🍎" for apple). Do NOT wrap in any container key. Example: {"apple":{"chinese":"n.蘋果","pos":"n","pronunciation":"/ˈæpəl/","emoji":"🍎"}}'
+        : 'You are a dictionary API. Return ONLY a flat JSON object where each key is exactly the English word (no brackets), and each value is {pos, pronunciation, emoji}. emoji must be a single emoji that visually represents the word. Do NOT wrap in any container key.';
 
       const resp = await groqFetch({
         model:'llama-3.3-70b-versatile', temperature:0.1, max_tokens:2000,
@@ -1347,9 +1363,9 @@ async function batchTranslate() {
         const f=findT(w.word); if(!f) continue;
         if (!w.chinese) {
           const zh = String(f.chinese||'').trim();
-          if (zh) { w.chinese=zh; w.pronunciation=stripSlashes(f.pronunciation); w.pos=String(f.pos||'').trim(); autoTagByPos(w); translated++; }
+          if (zh) { w.chinese=zh; w.pronunciation=stripSlashes(f.pronunciation); w.pos=String(f.pos||'').trim(); w.emoji=String(f.emoji||'').trim(); autoTagByPos(w); translated++; }
         } else if (!w.pos) {
-          w.pronunciation=stripSlashes(f.pronunciation||w.pronunciation); w.pos=String(f.pos||'').trim(); autoTagByPos(w); translated++;
+          w.pronunciation=stripSlashes(f.pronunciation||w.pronunciation); w.pos=String(f.pos||'').trim(); if(!w.emoji) w.emoji=String(f.emoji||'').trim(); autoTagByPos(w); translated++;
         }
       }
       saveWords(all);
@@ -1551,7 +1567,7 @@ function renderCard() {
 
   // Progress
   document.getElementById('fc-progress').textContent=`${studyIdx+1} / ${studyWords.length}`;
-  document.getElementById('fc-err-label').textContent=w.errorCount?`❌ 已錯 ${w.errorCount} 次`:'';
+  document.getElementById('fc-err-label').textContent='';
 
   // Front
   document.getElementById('fc-word').textContent=w.word;
@@ -1626,7 +1642,7 @@ function markUnknown() {
     const all=loadWords(); const f=all.find(x=>x.word===w.word);
     if (f) { f.errorCount=(f.errorCount||0)+1; saveWords(all); }
     w.errorCount=(w.errorCount||0)+1;
-    document.getElementById('fc-err-label').textContent=`❌ 已錯 ${w.errorCount} 次`;
+    // error count only shown in quiz review, not during flashcard study
   }
   if (studyIdx<studyWords.length-1) nextCard();
 }
@@ -2234,45 +2250,24 @@ function initKidSelector() {
 }
 function renderKidSelector() {
   const profiles = loadProfiles();
-  const cur = profiles.find(p=>p.id===curKidId) || profiles[0];
-  const avEl=document.getElementById('kid-avatar-display');
-  const nmEl=document.getElementById('kid-name-display');
-  if(avEl) avEl.textContent = cur ? cur.avatar : '🐣';
-  if(nmEl) nmEl.textContent = cur ? cur.name   : '新增小朋友';
-  const menu=document.getElementById('kid-menu');
-  if(!menu) return;
-  const kidItems = profiles.length ? profiles.map(p=>`
-    <button class="kid-menu-item ${p.id===curKidId?'active':''}" onclick="selectKid('${escJs(p.id)}')">
-      <span style="font-size:22px">${p.avatar}</span>
-      <span style="flex:1;text-align:left">${escHtml(p.name)}</span>
-      <span class="kid-stars-badge">⭐ ${p.stars3||0}</span>
-    </button>`).join('') : `<div style="font-size:13px;color:var(--ink2);padding:10px 12px;text-align:center;line-height:1.7">還沒有小朋友<br>先新增一個吧！</div>`;
-  menu.innerHTML = kidItems +
-    `<div class="kid-menu-divider"></div>` +
-    (profiles.length ? `<button class="kid-menu-item" onclick="showStickerAlbum()" style="color:var(--orange-dk)">🗂 貼紙收集冊</button>` : '') +
-    `<button class="kid-menu-item" onclick="showAddKidDialog()" style="color:var(--blue-dk)">➕ 新增小朋友</button>`;
-}
-function toggleKidMenu() {
-  const m=document.getElementById('kid-menu');
-  if(!m) return;
-  m.style.display = m.style.display==='none'?'block':'none';
-}
-function closeKidMenu() {
-  const m=document.getElementById('kid-menu'); if(m) m.style.display='none';
+  const bar = document.getElementById('kid-bar');
+  if (!bar) return;
+  const chips = profiles.map(p => `
+    <button class="kid-chip ${p.id===curKidId?'active':''}" onclick="selectKid('${escJs(p.id)}')">
+      ${escHtml(p.name)}
+      <span class="kid-chip-stars">⭐ ${p.stars3||0}</span>
+    </button>`).join('');
+  bar.innerHTML = chips +
+    `<button class="kid-add-chip" onclick="showAddKidDialog()">＋ 新增</button>`;
 }
 function selectKid(id) {
   curKidId=id; localStorage.setItem('wvk_last_kid',id);
-  renderKidSelector(); closeKidMenu();
+  renderKidSelector();
+  if(document.getElementById('screen-stickers')?.classList.contains('active')) renderStickersScreen();
 }
-document.addEventListener('click',e=>{
-  const wrap=document.getElementById('kid-selector-wrap');
-  if(wrap&&!wrap.contains(e.target)) closeKidMenu();
-});
 
 function showAddKidDialog() {
-  closeKidMenu();
   document.getElementById('new-kid-name').value='';
-  document.getElementById('new-kid-avatar').value='😊';
   document.getElementById('new-kid-target').value='';
   document.getElementById('add-kid-status').textContent='';
   const btn=document.getElementById('save-kid-btn');
@@ -2283,13 +2278,12 @@ function showAddKidDialog() {
 function closeAddKidDialog() { document.getElementById('add-kid-ov').classList.remove('show'); }
 async function saveNewKid() {
   const name=document.getElementById('new-kid-name').value.trim();
-  const avatar=(document.getElementById('new-kid-avatar').value.trim())||'😊';
   const target=document.getElementById('new-kid-target').value.trim();
   const st=document.getElementById('add-kid-status');
   if(!name){st.textContent='❌ 請輸入名字';return;}
   const btn=document.getElementById('save-kid-btn');
   const id='k'+Date.now();
-  const kid={id,name,avatar,target,stickerPool:null,stars3:0,stickers:[],quizLog:[]};
+  const kid={id,name,target,stickerPool:null,stars3:0,stickers:[],quizLog:[]};
   const profiles=loadProfiles();
   profiles.push(kid);
   saveProfiles(profiles);
@@ -2371,7 +2365,7 @@ let _pendingChestKid = null;
 function showTreasureChest(kid) {
   _pendingChestKid = kid;
   document.getElementById('chest-icon').textContent='🎁';
-  document.getElementById('chest-title').textContent=`🎁 ${kid.name}，恭喜！`;
+  document.getElementById('chest-title').textContent=`🎁 ${escHtml(kid.name)}，恭喜！`;
   document.getElementById('chest-sub').textContent=`已累積 ${kid.stars3} 個完美跟讀！\n點開寶箱看看得到什麼！`;
   document.getElementById('sticker-reveal-area').style.display='none';
   document.getElementById('chest-open-btn').style.display='block';
@@ -2421,7 +2415,7 @@ function renderAlbum() {
   const kidPool=getKidPool(kid);
   const owned=new Set(kid.stickers.map(s=>s.id));
   const pct=Math.round(owned.size/kidPool.length*100);
-  document.getElementById('album-kid-name').textContent=`${kid.avatar} ${kid.name} 的貼紙冊`;
+  document.getElementById('album-kid-name').textContent=`${escHtml(kid.name)} 的貼紙冊`;
   const targetLine = kid.target ? `<div style="font-size:12px;color:var(--orange-dk);font-weight:700;margin-top:2px">🎯 ${escHtml(kid.target)}</div>` : '';
   document.getElementById('album-kid-count').innerHTML=`已解鎖 ${owned.size} / ${kidPool.length} 張${targetLine}`;
   document.getElementById('album-prog-fill').style.width=pct+'%';
@@ -2434,6 +2428,45 @@ function renderAlbum() {
       <span class="s-cell-em">${s.emoji}</span>
       <div class="s-cell-lbl">${escHtml(s.label)}${isOwned&&dateStr?`<br><span style="font-size:9.5px;opacity:.7">${dateStr}解鎖</span>`:''}${!isOwned?'<br><span style="font-size:9.5px">🔒 未解鎖</span>':''}</div>
     </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+//  v2: STICKERS SCREEN
+// ══════════════════════════════════════════════════════
+function renderStickersScreen() {
+  const profiles = loadProfiles();
+  const el = document.getElementById('stickers-list');
+  if (!el) return;
+  if (!profiles.length) {
+    el.innerHTML = '<div class="empty-state"><span class="ei">🐣</span>請先新增小朋友！</div>';
+    return;
+  }
+  el.innerHTML = profiles.map(kid => {
+    const pool = getKidPool(kid);
+    const owned = new Set(kid.stickers.map(s => s.id));
+    const pct = Math.round(owned.size / pool.length * 100);
+    const targetLine = kid.target
+      ? `<div class="sticker-kid-target">🎯 ${escHtml(kid.target)}</div>` : '';
+    const miniCells = pool.map(s => {
+      const is = owned.has(s.id);
+      return `<div class="sticker-mini-cell ${is?'':'locked'}" title="${escHtml(s.label)}">${s.emoji}</div>`;
+    }).join('');
+    return `
+      <div class="sticker-kid-card">
+        <div class="sticker-kid-hd">
+          <div>
+            <div class="sticker-kid-name">${escHtml(kid.name)}</div>
+            ${targetLine}
+          </div>
+          <button class="btn btn-outline btn-sm" onclick="curKidId='${escJs(kid.id)}';renderKidSelector();showStickerAlbum()">查看完整</button>
+        </div>
+        <div class="sticker-kid-stats">
+          <span class="sticker-stat-pill">⭐ ${kid.stars3||0} 次跟讀</span>
+          <span class="sticker-stat-pill">🗂 ${owned.size}/${pool.length} 張 (${pct}%)</span>
+        </div>
+        <div class="sticker-mini-grid">${miniCells}</div>
+      </div>`;
   }).join('');
 }
 
@@ -2603,10 +2636,9 @@ initKidSelector();
 
 (function restoreLastTab(){
   const last=localStorage.getItem(LAST_TAB_KEY)||'import';
-  const valid=['import','study','quiz','bank'];
+  const valid=['import','study','quiz','stickers','bank'];
   const tab=valid.includes(last)?last:'import';
-  // 非受保護頁面直接跳轉；受保護頁面回到 import 避免繞過鎖
-  if (tab==='import'||tab==='study'||tab==='quiz') {
+  if (tab==='import'||tab==='study'||tab==='quiz'||tab==='stickers') {
     if (tab==='import') return; // already default active
     const btns=document.querySelectorAll('.nav-btn');
     let target=null;
