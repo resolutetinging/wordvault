@@ -888,15 +888,18 @@
 <div class="overlay" id="add-kid-ov">
   <div class="dialog">
     <h3>➕ 新增小朋友</h3>
-    <p>輸入名字和喜歡的 emoji 頭像</p>
+    <p>填完後 AI 會幫你生成專屬貼紙！</p>
     <label>名字</label>
-    <input type="text" id="new-kid-name" placeholder="例：小明、小華…" style="margin-bottom:12px;" maxlength="10" />
+    <input type="text" id="new-kid-name" placeholder="例：小明…" style="margin-bottom:12px;" maxlength="10" />
     <label>表情符號（頭像）</label>
     <input type="text" id="new-kid-avatar" placeholder="例：👦 👧 🐱 🐶" maxlength="4" style="font-size:22px;text-align:center;" />
-    <div style="font-size:11px;color:var(--ink2);margin-top:4px;margin-bottom:10px">貼上一個你喜歡的 emoji！</div>
+    <div style="font-size:11px;color:var(--ink2);margin-top:4px;margin-bottom:12px">貼上一個你喜歡的 emoji！</div>
+    <label>🎯 集點目標（集滿點可以得到什麼？）</label>
+    <input type="text" id="new-kid-target" placeholder="例：想要一個恐龍玩具、想去動物園…" style="margin-bottom:6px;" maxlength="40" />
+    <div style="font-size:11px;color:var(--ink2);margin-bottom:10px;line-height:1.6">填入目標後，AI 會幫你生成 12 個專屬主題貼紙 ✨</div>
     <div id="add-kid-status" style="min-height:18px;font-size:13px;color:var(--red);font-weight:700;margin-bottom:8px"></div>
     <div class="btn-row">
-      <button class="btn btn-green" onclick="saveNewKid()">✓ 新增</button>
+      <button class="btn btn-green" id="save-kid-btn" onclick="saveNewKid()">✓ 新增</button>
       <button class="btn btn-outline" onclick="closeAddKidDialog()">取消</button>
     </div>
   </div>
@@ -2214,12 +2217,9 @@ const STICKER_POOL = [
 function loadProfiles() {
   try {
     const p = JSON.parse(localStorage.getItem(KIDS_PROFILES_KEY)||'null');
-    if (p && Array.isArray(p) && p.length) return p;
+    if (p && Array.isArray(p)) return p;
   } catch {}
-  return [
-    {id:'k1',name:'小明',avatar:'👦',stars3:0,stickers:[],quizLog:[]},
-    {id:'k2',name:'小華',avatar:'👧',stars3:0,stickers:[],quizLog:[]},
-  ];
+  return [];
 }
 function saveProfiles(p) { localStorage.setItem(KIDS_PROFILES_KEY, JSON.stringify(p)); }
 
@@ -2238,18 +2238,19 @@ function renderKidSelector() {
   const avEl=document.getElementById('kid-avatar-display');
   const nmEl=document.getElementById('kid-name-display');
   if(avEl) avEl.textContent = cur ? cur.avatar : '🐣';
-  if(nmEl) nmEl.textContent = cur ? cur.name   : '選小朋友';
+  if(nmEl) nmEl.textContent = cur ? cur.name   : '新增小朋友';
   const menu=document.getElementById('kid-menu');
   if(!menu) return;
-  menu.innerHTML = profiles.map(p=>`
+  const kidItems = profiles.length ? profiles.map(p=>`
     <button class="kid-menu-item ${p.id===curKidId?'active':''}" onclick="selectKid('${escJs(p.id)}')">
       <span style="font-size:22px">${p.avatar}</span>
-      <span>${escHtml(p.name)}</span>
+      <span style="flex:1;text-align:left">${escHtml(p.name)}</span>
       <span class="kid-stars-badge">⭐ ${p.stars3||0}</span>
-    </button>`).join('') +
-    `<div class="kid-menu-divider"></div>
-     <button class="kid-menu-item" onclick="showStickerAlbum()" style="color:var(--orange-dk)">🗂 貼紙收集冊</button>
-     <button class="kid-menu-item" onclick="showAddKidDialog()" style="color:var(--blue-dk)">➕ 新增小朋友</button>`;
+    </button>`).join('') : `<div style="font-size:13px;color:var(--ink2);padding:10px 12px;text-align:center;line-height:1.7">還沒有小朋友<br>先新增一個吧！</div>`;
+  menu.innerHTML = kidItems +
+    `<div class="kid-menu-divider"></div>` +
+    (profiles.length ? `<button class="kid-menu-item" onclick="showStickerAlbum()" style="color:var(--orange-dk)">🗂 貼紙收集冊</button>` : '') +
+    `<button class="kid-menu-item" onclick="showAddKidDialog()" style="color:var(--blue-dk)">➕ 新增小朋友</button>`;
 }
 function toggleKidMenu() {
   const m=document.getElementById('kid-menu');
@@ -2272,20 +2273,82 @@ function showAddKidDialog() {
   closeKidMenu();
   document.getElementById('new-kid-name').value='';
   document.getElementById('new-kid-avatar').value='😊';
+  document.getElementById('new-kid-target').value='';
   document.getElementById('add-kid-status').textContent='';
+  const btn=document.getElementById('save-kid-btn');
+  if(btn){btn.disabled=false;btn.innerHTML='✓ 新增';}
   document.getElementById('add-kid-ov').classList.add('show');
+  setTimeout(()=>document.getElementById('new-kid-name').focus(),200);
 }
 function closeAddKidDialog() { document.getElementById('add-kid-ov').classList.remove('show'); }
-function saveNewKid() {
+async function saveNewKid() {
   const name=document.getElementById('new-kid-name').value.trim();
   const avatar=(document.getElementById('new-kid-avatar').value.trim())||'😊';
-  if(!name){document.getElementById('add-kid-status').textContent='❌ 請輸入名字';return;}
-  const profiles=loadProfiles();
+  const target=document.getElementById('new-kid-target').value.trim();
+  const st=document.getElementById('add-kid-status');
+  if(!name){st.textContent='❌ 請輸入名字';return;}
+  const btn=document.getElementById('save-kid-btn');
   const id='k'+Date.now();
-  profiles.push({id,name,avatar,stars3:0,stickers:[],quizLog:[]});
+  const kid={id,name,avatar,target,stickerPool:null,stars3:0,stickers:[],quizLog:[]};
+  const profiles=loadProfiles();
+  profiles.push(kid);
   saveProfiles(profiles);
   curKidId=id; localStorage.setItem('wvk_last_kid',id);
-  renderKidSelector(); closeAddKidDialog();
+  renderKidSelector();
+  // Generate AI sticker pool
+  if(target && getApiKey()){
+    btn.disabled=true; btn.innerHTML='<span class="loader"></span> AI 生成貼紙中…';
+    st.style.color='var(--blue-dk)'; st.textContent='✨ AI 正在依據目標生成專屬貼紙…';
+    const pool = await genKidStickerPool(id, target);
+    if(pool){
+      st.style.color='var(--green-dk)';
+      st.textContent=`✅ 生成完成！共 ${pool.length} 款貼紙等你解鎖！`;
+      setTimeout(()=>closeAddKidDialog(),1400);
+    } else {
+      st.style.color='var(--ink2)';
+      st.textContent='已建立（使用預設貼紙，之後可補設 API Key 重新生成）';
+      setTimeout(()=>closeAddKidDialog(),1800);
+    }
+  } else {
+    if(target && !getApiKey()){
+      st.style.color='var(--ink2)';
+      st.textContent='📝 小朋友已建立！設定 Groq API Key 後可生成專屬貼紙';
+    }
+    setTimeout(()=>closeAddKidDialog(),800);
+  }
+}
+
+async function genKidStickerPool(kidId, target) {
+  const apiKey = getApiKey(); if(!apiKey) return null;
+  const prompt = `小朋友的集點目標是「${target}」。請根據這個目標，生成 12 個可愛的虛擬集點貼紙，讓孩子解鎖貼紙時感覺跟目標愈來愈近。每個貼紙要有主題感，與目標相關或能讓孩子開心。
+輸出純 JSON 陣列（直接從 [ 開始，不加 markdown）：
+[{"id":"英文唯一id","emoji":"一個emoji","label":"4字以內中文"}]`;
+  try {
+    const r = await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
+      body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'user',content:prompt}],max_tokens:600,temperature:.8})
+    });
+    if(!r.ok) throw new Error('API '+r.status);
+    const j=await r.json();
+    const raw=(j.choices?.[0]?.message?.content||'').trim();
+    const m=raw.match(/\[[\s\S]*\]/);
+    if(!m) throw new Error('no array');
+    const pool=JSON.parse(m[0]);
+    if(!Array.isArray(pool)||!pool.length) throw new Error('empty');
+    // Save to kid profile
+    const profiles=loadProfiles();
+    const kid=profiles.find(p=>p.id===kidId);
+    if(kid){kid.stickerPool=pool;saveProfiles(profiles);}
+    return pool;
+  } catch(e){
+    console.warn('genKidStickerPool failed:',e);
+    return null;
+  }
+}
+
+function getKidPool(kid) {
+  return (kid && kid.stickerPool && kid.stickerPool.length) ? kid.stickerPool : STICKER_POOL;
 }
 
 // ══════════════════════════════════════════════════════
@@ -2320,8 +2383,9 @@ function openChest() {
   const profiles=loadProfiles();
   const fresh=profiles.find(p=>p.id===kid.id); if(!fresh) return;
   const owned=new Set(fresh.stickers.map(s=>s.id));
-  const pool=STICKER_POOL.filter(s=>!owned.has(s.id));
-  const pick=pool.length>0 ? pool[Math.floor(Math.random()*pool.length)] : STICKER_POOL[Math.floor(Math.random()*STICKER_POOL.length)];
+  const kidPool=getKidPool(fresh);
+  const pool=kidPool.filter(s=>!owned.has(s.id));
+  const pick=pool.length>0 ? pool[Math.floor(Math.random()*pool.length)] : kidPool[Math.floor(Math.random()*kidPool.length)];
   fresh.stickers.push({...pick,ts:Date.now()});
   saveProfiles(profiles);
   document.getElementById('chest-icon').textContent='🎊';
@@ -2345,15 +2409,24 @@ function showStickerAlbum() {
 function closeAlbum() { document.getElementById('album-ov').classList.remove('show'); }
 function renderAlbum() {
   const profiles=loadProfiles();
-  const kid=profiles.find(p=>p.id===curKidId)||profiles[0]; if(!kid) return;
+  const kid=profiles.find(p=>p.id===curKidId)||profiles[0];
+  if(!kid){
+    document.getElementById('album-kid-name').textContent='貼紙收集冊';
+    document.getElementById('album-kid-count').textContent='先新增小朋友吧！';
+    document.getElementById('album-prog-fill').style.width='0%';
+    const pctEl=document.getElementById('album-prog-pct'); if(pctEl) pctEl.textContent='0%';
+    document.getElementById('album-grid').innerHTML='<div class="empty-state" style="grid-column:1/-1"><span class="ei">🐣</span>請先新增小朋友</div>';
+    return;
+  }
+  const kidPool=getKidPool(kid);
   const owned=new Set(kid.stickers.map(s=>s.id));
-  const pct=Math.round(owned.size/STICKER_POOL.length*100);
+  const pct=Math.round(owned.size/kidPool.length*100);
   document.getElementById('album-kid-name').textContent=`${kid.avatar} ${kid.name} 的貼紙冊`;
-  document.getElementById('album-kid-count').textContent=`已解鎖 ${owned.size} / ${STICKER_POOL.length} 張`;
+  const targetLine = kid.target ? `<div style="font-size:12px;color:var(--orange-dk);font-weight:700;margin-top:2px">🎯 ${escHtml(kid.target)}</div>` : '';
+  document.getElementById('album-kid-count').innerHTML=`已解鎖 ${owned.size} / ${kidPool.length} 張${targetLine}`;
   document.getElementById('album-prog-fill').style.width=pct+'%';
-  const pctEl=document.getElementById('album-prog-pct');
-  if(pctEl) pctEl.textContent=pct+'%';
-  document.getElementById('album-grid').innerHTML=STICKER_POOL.map(s=>{
+  const pctEl=document.getElementById('album-prog-pct'); if(pctEl) pctEl.textContent=pct+'%';
+  document.getElementById('album-grid').innerHTML=kidPool.map(s=>{
     const isOwned=owned.has(s.id);
     const own=kid.stickers.find(x=>x.id===s.id);
     const dateStr=own?new Date(own.ts).toLocaleDateString('zh-TW',{month:'numeric',day:'numeric'}):'';
