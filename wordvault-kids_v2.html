@@ -441,6 +441,70 @@
     .fc-actions {
       display: flex; gap: 14px; justify-content: center; margin-top: 16px;
     }
+
+    /* ── v2: Example Drawer ── */
+    .example-drawer{background:rgba(255,255,255,.92);border:2.5px solid var(--green);border-radius:18px;padding:14px 18px;margin-top:12px;box-shadow:0 4px 16px rgba(0,0,0,.1);animation:drawerSlide .35s ease}
+    @keyframes drawerSlide{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+    .ex-label{font-size:10px;font-weight:800;color:var(--green-dk);text-transform:uppercase;letter-spacing:1.5px;margin-bottom:7px}
+    .ex-en{font-size:15px;font-weight:600;color:var(--ink);line-height:1.7}
+    .ex-en strong{color:var(--green-dk);font-weight:800;background:var(--green-lt);border-radius:5px;padding:0 3px}
+    .ex-zh{font-size:12.5px;color:var(--ink2);margin-top:5px;font-weight:500;line-height:1.6}
+    .ex-tts-btn{background:var(--green-lt);border:2px solid var(--green);border-radius:10px;padding:5px 12px;font-size:13px;cursor:pointer;font-family:inherit;font-weight:700;color:var(--green-dk);transition:all .15s}
+    .ex-tts-btn:hover{background:var(--green);color:white}
+
+    /* ── v2: Kid Selector ── */
+    .kid-selector{position:relative}
+    .kid-selector-btn{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.3);border:2px solid rgba(255,255,255,.5);border-radius:14px;padding:7px 12px;font-family:inherit;cursor:pointer;font-size:13px;font-weight:700;color:white;transition:all .18s;white-space:nowrap}
+    .kid-selector-btn:hover{background:rgba(255,255,255,.45)}
+    .kid-menu{position:absolute;right:0;top:calc(100% + 8px);background:white;border-radius:18px;padding:10px 8px;box-shadow:0 8px 32px rgba(0,0,0,.18);min-width:180px;z-index:300;border:2.5px solid var(--border)}
+    .kid-menu-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;cursor:pointer;font-size:14px;font-weight:700;transition:background .15s;border:none;background:none;width:100%;font-family:inherit;color:var(--ink);text-align:left}
+    .kid-menu-item:hover{background:var(--blue-lt)}
+    .kid-menu-item.active{background:var(--yellow-lt);color:var(--orange-dk)}
+    .kid-stars-badge{font-size:11px;background:var(--yellow-lt);color:var(--orange-dk);border-radius:8px;padding:2px 7px;margin-left:auto;font-weight:800}
+    .kid-menu-divider{height:1.5px;background:var(--border);margin:6px 0}
+
+    /* ── v2: Treasure Chest ── */
+    .chest-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.6);z-index:500;align-items:center;justify-content:center;padding:24px}
+    .chest-ov.show{display:flex}
+    .chest-box{background:linear-gradient(160deg,#FFF8EE,#FFF3CC);border-radius:32px;padding:32px 28px;width:100%;max-width:340px;text-align:center;box-shadow:0 16px 60px rgba(0,0,0,.3);animation:chestPop .4s cubic-bezier(.34,1.56,.64,1)}
+    @keyframes chestPop{from{transform:scale(.3) rotate(-10deg);opacity:0}to{transform:scale(1) rotate(0);opacity:1}}
+    .chest-icon{font-size:90px;line-height:1;margin-bottom:12px;display:block;cursor:pointer;transition:transform .3s}
+    .chest-icon:hover{transform:scale(1.1) rotate(5deg)}
+    .chest-title{font-size:24px;font-weight:900;color:var(--orange-dk);margin-bottom:6px}
+    .chest-sub{font-size:14px;color:var(--ink2);margin-bottom:16px;font-weight:600;line-height:1.6}
+    .sticker-reveal{font-size:72px;line-height:1;margin:12px 0;animation:sBounce .6s cubic-bezier(.34,1.56,.64,1)}
+    @keyframes sBounce{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}
+    .sticker-name{font-size:18px;font-weight:900;color:var(--ink);margin-bottom:4px}
+    .sticker-stamp{font-size:12px;color:var(--green-dk);font-weight:700;margin-bottom:18px}
+
+    /* ── v2: Sticker Album ── */
+    .album-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:400;align-items:flex-start;justify-content:center;overflow-y:auto;padding:20px}
+    .album-ov.show{display:flex}
+    .album-box{background:white;border-radius:28px;padding:24px;width:100%;max-width:480px;margin:auto;box-shadow:0 16px 50px rgba(0,0,0,.25);animation:fadeIn .25s ease}
+    .sticker-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-top:14px}
+    .s-cell{background:var(--bg);border:2.5px solid var(--border);border-radius:18px;padding:16px 8px;text-align:center;transition:all .15s}
+    .s-cell.unlocked{border-color:var(--yellow);background:var(--yellow-lt)}
+    .s-cell.locked{opacity:.32;filter:grayscale(1)}
+    .s-cell-em{font-size:36px;line-height:1.2;display:block}
+    .s-cell-lbl{font-size:11px;font-weight:700;color:var(--ink2);margin-top:4px;line-height:1.4}
+    .s-cell.unlocked .s-cell-lbl{color:var(--orange-dk)}
+    .album-prog-row{display:flex;align-items:center;gap:8px;margin-bottom:14px}
+    .album-prog-wrap{flex:1;height:10px;background:var(--border);border-radius:5px;overflow:hidden}
+    .album-prog-fill{height:100%;background:linear-gradient(90deg,var(--yellow),var(--orange));border-radius:5px;transition:width .4s ease}
+
+    /* ── v2: Egg Lock ── */
+    .egg-trig{font-size:16px;cursor:pointer;user-select:none;opacity:.28;transition:opacity .3s;padding:2px 4px;border-radius:4px;line-height:1;flex-shrink:0}
+    .egg-trig:hover{opacity:.65}
+    .egg-trig.flash{animation:eggF .25s ease 4}
+    @keyframes eggF{0%,100%{background:transparent}50%{background:var(--yellow-lt)}}
+    .egg-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;align-items:center;justify-content:center;padding:24px}
+    .egg-ov.show{display:flex}
+    .egg-box{background:white;border-radius:28px;padding:32px 26px;width:100%;max-width:390px;box-shadow:0 16px 60px rgba(0,0,0,.3);animation:fadeIn .25s ease;max-height:88vh;overflow-y:auto}
+    .err-word-row{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1.5px solid var(--border)}
+    .err-word-row:last-child{border-bottom:none}
+    .acc-bar-wrap{height:12px;background:var(--border);border-radius:6px;overflow:hidden;margin-top:6px}
+    .acc-bar-fill{height:100%;background:linear-gradient(90deg,var(--green),var(--blue));border-radius:6px;transition:width .5s ease}
+    .groq-advice{background:var(--yellow-lt);border-radius:14px;padding:14px 16px;font-size:13.5px;color:var(--ink);line-height:1.8;font-weight:500;margin-top:12px;border-left:4px solid var(--yellow-dk)}
   </style>
 </head>
 <body>
@@ -450,6 +514,14 @@
     <div>
       <div class="app-title">🌈 WordVault Kids</div>
       <div class="word-count-badge" id="global-count">載入中…</div>
+    </div>
+    <div class="kid-selector" id="kid-selector-wrap">
+      <button class="kid-selector-btn" onclick="toggleKidMenu()">
+        <span id="kid-avatar-display" style="font-size:20px;line-height:1">🐣</span>
+        <span id="kid-name-display">選小朋友</span>
+        <span style="font-size:10px;opacity:.7">▾</span>
+      </button>
+      <div class="kid-menu" id="kid-menu" style="display:none"></div>
     </div>
   </div>
   <nav class="nav">
@@ -617,12 +689,23 @@
         <div class="flip-card-face flip-card-back">
           <div class="fc-face-label">中文意思</div>
           <img class="fc-card-img" id="fc-back-img" src="" alt="" style="display:none;" />
+          <span id="fc-emoji" style="font-size:44px;line-height:1;margin-bottom:6px;display:none;"></span>
           <div class="fc-chinese" id="fc-chinese">—</div>
           <div class="fc-word-small" id="fc-word-back"></div>
           <div class="fc-pos-badge" id="fc-pos-badge" style="display:none;"></div>
           <div class="fc-tap-hint">👆 點卡片翻轉回正面</div>
         </div>
 
+      </div>
+    </div>
+
+    <!-- 例句抽屜（翻到背面後滑出）-->
+    <div id="example-drawer-wrap" style="display:none">
+      <div class="example-drawer">
+        <div class="ex-label">🔤 例句練習</div>
+        <div class="ex-en" id="ex-en"></div>
+        <div class="ex-zh" id="ex-zh"></div>
+        <div style="margin-top:8px;"><button class="ex-tts-btn" onclick="speakExample()">🔊 朗讀例句</button></div>
       </div>
     </div>
 
@@ -735,6 +818,10 @@
   <div class="bank-controls">
     <input type="text" id="bank-search" placeholder="🔍 搜尋單字 / 中文…" oninput="renderBank()" />
     <button class="btn-icon" onclick="confirmClearAll()" title="清空全部" style="flex-shrink:0;">🗑</button>
+    <span id="egg-trig" class="egg-trig"
+      onclick="eggTriggerClick()"
+      onmousedown="eggPressStart()" onmouseup="eggPressEnd()" onmouseleave="eggPressEnd()"
+      ontouchstart="eggPressStart()" ontouchend="eggPressEnd()">🌈</span>
   </div>
   <div id="bank-resource-filter" class="tag-filter-row" style="margin-bottom:12px;display:none;"></div>
   <div id="bank-list"></div>
@@ -751,6 +838,111 @@
     <div class="btn-row">
       <button class="btn btn-danger" onclick="confirmAction()">確定</button>
       <button class="btn btn-outline" onclick="closeConfirm()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Treasure Chest Overlay ═══ -->
+<div class="chest-ov" id="chest-ov">
+  <div class="chest-box">
+    <span class="chest-icon" id="chest-icon">🎁</span>
+    <div class="chest-title" id="chest-title">恭喜！</div>
+    <div class="chest-sub" id="chest-sub">你解鎖了一個寶箱！</div>
+    <div id="sticker-reveal-area" style="display:none">
+      <div class="sticker-reveal" id="reveal-sticker-em">🌟</div>
+      <div class="sticker-name" id="reveal-sticker-name">魔法星星</div>
+      <div class="sticker-stamp">✅ 已永久蓋章在貼紙冊！</div>
+    </div>
+    <div id="chest-open-btn">
+      <button class="btn btn-yellow" style="font-size:17px;padding:14px 28px;" onclick="openChest()">🎁 打開寶箱！</button>
+    </div>
+    <button class="btn btn-outline btn-sm" onclick="closeChest()" style="margin-top:10px;">關閉</button>
+  </div>
+</div>
+
+<!-- ═══ Sticker Album Overlay ═══ -->
+<div class="album-ov" id="album-ov">
+  <div class="album-box">
+    <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:6px;">
+      <div>
+        <div style="font-size:20px;font-weight:900;color:var(--orange-dk)" id="album-kid-name">貼紙收集冊</div>
+        <div style="font-size:13px;color:var(--ink2);font-weight:600" id="album-kid-count">0 / 12</div>
+      </div>
+      <button class="btn-icon" onclick="closeAlbum()">✕</button>
+    </div>
+    <div class="album-prog-row">
+      <div class="album-prog-wrap">
+        <div class="album-prog-fill" id="album-prog-fill" style="width:0%"></div>
+      </div>
+      <span style="font-size:12px;font-weight:700;color:var(--ink2);white-space:nowrap" id="album-prog-pct">0%</span>
+    </div>
+    <div class="sticker-grid" id="album-grid"></div>
+    <div style="text-align:center;margin-top:16px;font-size:12.5px;color:var(--ink2);font-weight:600;line-height:1.8">
+      💡 每累積 5 個完美跟讀 🌟🌟🌟，即可開啟寶箱獲得新貼紙！<br>
+      或是在闖關中取得 100 分滿分！
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Add Kid Dialog ═══ -->
+<div class="overlay" id="add-kid-ov">
+  <div class="dialog">
+    <h3>➕ 新增小朋友</h3>
+    <p>輸入名字和喜歡的 emoji 頭像</p>
+    <label>名字</label>
+    <input type="text" id="new-kid-name" placeholder="例：小明、小華…" style="margin-bottom:12px;" maxlength="10" />
+    <label>表情符號（頭像）</label>
+    <input type="text" id="new-kid-avatar" placeholder="例：👦 👧 🐱 🐶" maxlength="4" style="font-size:22px;text-align:center;" />
+    <div style="font-size:11px;color:var(--ink2);margin-top:4px;margin-bottom:10px">貼上一個你喜歡的 emoji！</div>
+    <div id="add-kid-status" style="min-height:18px;font-size:13px;color:var(--red);font-weight:700;margin-bottom:8px"></div>
+    <div class="btn-row">
+      <button class="btn btn-green" onclick="saveNewKid()">✓ 新增</button>
+      <button class="btn btn-outline" onclick="closeAddKidDialog()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Egg Lock Overlay ═══ -->
+<div class="egg-ov" id="egg-ov">
+  <div class="egg-box">
+    <!-- 首次設定 -->
+    <div id="egg-setup">
+      <div style="font-size:40px;text-align:center;margin-bottom:12px">🔐</div>
+      <div style="font-size:20px;font-weight:900;margin-bottom:6px">首次設定密碼</div>
+      <div style="font-size:14px;color:var(--ink2);margin-bottom:18px;line-height:1.6;font-weight:500">請自訂一組密碼（4字以上），<br>下次進入此功能時使用。</div>
+      <label>新密碼</label>
+      <input type="password" id="egg-new-pwd" placeholder="至少 4 個字元" style="margin-bottom:10px;" onkeydown="if(event.key==='Enter')document.getElementById('egg-new-pwd2').focus()" />
+      <label>確認密碼</label>
+      <input type="password" id="egg-new-pwd2" placeholder="再輸入一次" style="margin-bottom:8px;" onkeydown="if(event.key==='Enter')saveParentPwd()" />
+      <div id="egg-setup-status" style="min-height:18px;font-size:13px;color:var(--red);font-weight:700;margin-bottom:10px"></div>
+      <div class="btn-row">
+        <button class="btn btn-green" onclick="saveParentPwd()">✓ 設定並進入</button>
+        <button class="btn btn-outline" onclick="closeEggLock()">取消</button>
+      </div>
+    </div>
+    <!-- 驗證 -->
+    <div id="egg-verify" style="display:none">
+      <div style="font-size:40px;text-align:center;margin-bottom:12px">🔑</div>
+      <div style="font-size:20px;font-weight:900;margin-bottom:6px">請輸入密碼</div>
+      <div style="font-size:14px;color:var(--ink2);margin-bottom:18px;font-weight:500">驗證通過後即可查看成長追蹤。</div>
+      <input type="password" id="egg-pwd-input" placeholder="輸入密碼" onkeydown="if(event.key==='Enter')verifyParentPwd()" />
+      <div id="egg-pwd-status" style="min-height:18px;font-size:13px;color:var(--red);margin-top:8px;font-weight:700"></div>
+      <div class="btn-row" style="margin-top:12px;">
+        <button class="btn btn-green" onclick="verifyParentPwd()">✓ 確認</button>
+        <button class="btn btn-outline" onclick="closeEggLock()">取消</button>
+      </div>
+    </div>
+    <!-- 分析內容 -->
+    <div id="egg-content" style="display:none">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+        <div style="font-size:18px;font-weight:900">成長追蹤</div>
+        <button class="btn-icon" onclick="closeEggLock()">✕</button>
+      </div>
+      <div id="analytics-body"></div>
+      <div id="groq-advice-area"></div>
+      <div style="text-align:center;margin-top:16px">
+        <button class="btn btn-outline btn-sm" onclick="resetParentPwd()">🔄 重設密碼</button>
+      </div>
     </div>
   </div>
 </div>
@@ -1255,6 +1447,8 @@ function showStarFeedback(stars, msg) {
   const ov = document.getElementById('star-overlay');
   ov.classList.add('show');
   setTimeout(() => ov.classList.remove('show'), 1800);
+  // Track 3-star for kid
+  if (stars === '🌟🌟🌟') addKidStar3();
 }
 
 // ═══════════════════════════════════════════
@@ -1346,9 +1540,11 @@ function showStudyEmpty(icon, msg) {
 function renderCard() {
   const w=studyWords[studyIdx]; if(!w) return;
 
-  // Reset flip state
+  // Reset flip state + hide example drawer
   const card=document.getElementById('flip-card');
   card.classList.remove('flipped');
+  const drawer=document.getElementById('example-drawer-wrap');
+  if(drawer) drawer.style.display='none';
 
   // Progress
   document.getElementById('fc-progress').textContent=`${studyIdx+1} / ${studyWords.length}`;
@@ -1366,6 +1562,14 @@ function renderCard() {
   const posBadge=document.getElementById('fc-pos-badge');
   if (w.pos) { posBadge.textContent=w.pos; posBadge.style.display='inline-block'; }
   else posBadge.style.display='none';
+  // Emoji on back face
+  const emojiEl=document.getElementById('fc-emoji');
+  if(emojiEl){
+    const posEmoji={n:'📦',noun:'📦',v:'⚡',verb:'⚡',adj:'✨',adv:'💨',prep:'🔗',pron:'👤',conj:'🔗'};
+    const em=w.emoji||posEmoji[(w.pos||'').toLowerCase()];
+    if(em){emojiEl.textContent=em;emojiEl.style.display='block';}
+    else emojiEl.style.display='none';
+  }
 
   // Image — show on both faces if imageUrl exists, resize scene
   const scene=document.getElementById('flip-scene');
@@ -1387,7 +1591,16 @@ function renderCard() {
 }
 
 function flipCard() {
-  document.getElementById('flip-card').classList.toggle('flipped');
+  const card = document.getElementById('flip-card');
+  const isFlippingToBack = !card.classList.contains('flipped');
+  card.classList.toggle('flipped');
+  const drawer = document.getElementById('example-drawer-wrap');
+  if (isFlippingToBack) {
+    updateExampleDrawer();
+    drawer.style.display = 'block';
+  } else {
+    drawer.style.display = 'none';
+  }
 }
 function prevCard() {
   if (studyIdx<=0) return;
@@ -1610,10 +1823,27 @@ function showResults() {
   const used=totalSeconds-secondsLeft;
   const m=Math.floor(used/60), s=used%60;
 
+  // Save quiz log for current kid
+  if (curKidId) {
+    const _profs = loadProfiles();
+    const _k = _profs.find(p=>p.id===curKidId);
+    if (_k) {
+      if (!_k.quizLog) _k.quizLog=[];
+      _k.quizLog.push({date:new Date().toISOString().slice(0,10),pct,total:total,correct,wrong});
+      if (_k.quizLog.length>30) _k.quizLog.shift();
+      saveProfiles(_profs);
+    }
+  }
   // Medal & title
   let medal='', title='';
-  if (hp<=0)      { medal='💔'; title='別灰心，再努力一次！'; }
-  else if (pct>=90){ medal='🏆'; title='單字超人！太厲害了！'; launchConfetti(); }
+  if (hp<=0)       { medal='💔'; title='別灰心，再努力一次！'; }
+  else if (pct>=90){ medal='🏆'; title='單字超人！太厲害了！'; launchConfetti();
+    // 100% triggers treasure chest
+    if (pct===100 && curKidId) {
+      const _ps=loadProfiles(); const _ck=_ps.find(p=>p.id===curKidId);
+      if(_ck) setTimeout(()=>showTreasureChest(_ck), 2500);
+    }
+  }
   else if (pct>=70){ medal='🥇'; title='單字小勇士！好棒！';  launchConfetti(); }
   else if (pct>=50){ medal='🥈'; title='繼續加油！快到了！'; }
   else             { medal='📚'; title='多練習就會進步的！'; }
@@ -1954,6 +2184,338 @@ function toggleCard(bodyId, arrowId) {
   } catch(e){console.warn('kids migration error:',e);}
 })();
 
+// ══════════════════════════════════════════════════════
+//  v2 NEW: STORAGE KEYS (all isolated, no -kids conflicts)
+// ══════════════════════════════════════════════════════
+const KIDS_PROFILES_KEY = 'wvk_kids_profiles';
+const PARENT_PWD_KEY    = 'wvk_parent_pwd';
+
+// ══════════════════════════════════════════════════════
+//  v2: STICKER POOL
+// ══════════════════════════════════════════════════════
+const STICKER_POOL = [
+  {id:'car',   emoji:'🏎',  label:'藍色閃電賽車'},
+  {id:'dress', emoji:'👗',  label:'夢幻蓬蓬裙'},
+  {id:'rocket',emoji:'🚀',  label:'彩虹火箭'},
+  {id:'crown', emoji:'👑',  label:'閃亮皇冠'},
+  {id:'dragon',emoji:'🐉',  label:'友善小龍'},
+  {id:'star',  emoji:'⭐',  label:'魔法星星'},
+  {id:'cat',   emoji:'🐱',  label:'可愛貓咪'},
+  {id:'cake',  emoji:'🎂',  label:'生日蛋糕'},
+  {id:'dino',  emoji:'🦕',  label:'恐龍寶寶'},
+  {id:'ice',   emoji:'🍦',  label:'彩虹冰淇淋'},
+  {id:'robot', emoji:'🤖',  label:'超級機器人'},
+  {id:'uni',   emoji:'🦄',  label:'獨角獸'},
+];
+
+// ══════════════════════════════════════════════════════
+//  v2: KID PROFILES
+// ══════════════════════════════════════════════════════
+function loadProfiles() {
+  try {
+    const p = JSON.parse(localStorage.getItem(KIDS_PROFILES_KEY)||'null');
+    if (p && Array.isArray(p) && p.length) return p;
+  } catch {}
+  return [
+    {id:'k1',name:'小明',avatar:'👦',stars3:0,stickers:[],quizLog:[]},
+    {id:'k2',name:'小華',avatar:'👧',stars3:0,stickers:[],quizLog:[]},
+  ];
+}
+function saveProfiles(p) { localStorage.setItem(KIDS_PROFILES_KEY, JSON.stringify(p)); }
+
+let curKidId = '';
+
+function initKidSelector() {
+  const profiles = loadProfiles();
+  const lastId = localStorage.getItem('wvk_last_kid')||'';
+  const found = profiles.find(p=>p.id===lastId);
+  curKidId = found ? found.id : (profiles[0] ? profiles[0].id : '');
+  renderKidSelector();
+}
+function renderKidSelector() {
+  const profiles = loadProfiles();
+  const cur = profiles.find(p=>p.id===curKidId) || profiles[0];
+  const avEl=document.getElementById('kid-avatar-display');
+  const nmEl=document.getElementById('kid-name-display');
+  if(avEl) avEl.textContent = cur ? cur.avatar : '🐣';
+  if(nmEl) nmEl.textContent = cur ? cur.name   : '選小朋友';
+  const menu=document.getElementById('kid-menu');
+  if(!menu) return;
+  menu.innerHTML = profiles.map(p=>`
+    <button class="kid-menu-item ${p.id===curKidId?'active':''}" onclick="selectKid('${escJs(p.id)}')">
+      <span style="font-size:22px">${p.avatar}</span>
+      <span>${escHtml(p.name)}</span>
+      <span class="kid-stars-badge">⭐ ${p.stars3||0}</span>
+    </button>`).join('') +
+    `<div class="kid-menu-divider"></div>
+     <button class="kid-menu-item" onclick="showStickerAlbum()" style="color:var(--orange-dk)">🗂 貼紙收集冊</button>
+     <button class="kid-menu-item" onclick="showAddKidDialog()" style="color:var(--blue-dk)">➕ 新增小朋友</button>`;
+}
+function toggleKidMenu() {
+  const m=document.getElementById('kid-menu');
+  if(!m) return;
+  m.style.display = m.style.display==='none'?'block':'none';
+}
+function closeKidMenu() {
+  const m=document.getElementById('kid-menu'); if(m) m.style.display='none';
+}
+function selectKid(id) {
+  curKidId=id; localStorage.setItem('wvk_last_kid',id);
+  renderKidSelector(); closeKidMenu();
+}
+document.addEventListener('click',e=>{
+  const wrap=document.getElementById('kid-selector-wrap');
+  if(wrap&&!wrap.contains(e.target)) closeKidMenu();
+});
+
+function showAddKidDialog() {
+  closeKidMenu();
+  document.getElementById('new-kid-name').value='';
+  document.getElementById('new-kid-avatar').value='😊';
+  document.getElementById('add-kid-status').textContent='';
+  document.getElementById('add-kid-ov').classList.add('show');
+}
+function closeAddKidDialog() { document.getElementById('add-kid-ov').classList.remove('show'); }
+function saveNewKid() {
+  const name=document.getElementById('new-kid-name').value.trim();
+  const avatar=(document.getElementById('new-kid-avatar').value.trim())||'😊';
+  if(!name){document.getElementById('add-kid-status').textContent='❌ 請輸入名字';return;}
+  const profiles=loadProfiles();
+  const id='k'+Date.now();
+  profiles.push({id,name,avatar,stars3:0,stickers:[],quizLog:[]});
+  saveProfiles(profiles);
+  curKidId=id; localStorage.setItem('wvk_last_kid',id);
+  renderKidSelector(); closeAddKidDialog();
+}
+
+// ══════════════════════════════════════════════════════
+//  v2: THREE-STAR TRACKING
+// ══════════════════════════════════════════════════════
+function addKidStar3() {
+  if(!curKidId) return;
+  const profiles=loadProfiles();
+  const kid=profiles.find(p=>p.id===curKidId); if(!kid) return;
+  kid.stars3=(kid.stars3||0)+1;
+  saveProfiles(profiles);
+  renderKidSelector();
+  if(kid.stars3>0 && kid.stars3%5===0) setTimeout(()=>showTreasureChest(kid),2200);
+}
+
+// ══════════════════════════════════════════════════════
+//  v2: TREASURE CHEST
+// ══════════════════════════════════════════════════════
+let _pendingChestKid = null;
+function showTreasureChest(kid) {
+  _pendingChestKid = kid;
+  document.getElementById('chest-icon').textContent='🎁';
+  document.getElementById('chest-title').textContent=`🎁 ${kid.name}，恭喜！`;
+  document.getElementById('chest-sub').textContent=`已累積 ${kid.stars3} 個完美跟讀！\n點開寶箱看看得到什麼！`;
+  document.getElementById('sticker-reveal-area').style.display='none';
+  document.getElementById('chest-open-btn').style.display='block';
+  document.getElementById('chest-ov').classList.add('show');
+  launchConfetti();
+}
+function openChest() {
+  const kid=_pendingChestKid; if(!kid) return;
+  const profiles=loadProfiles();
+  const fresh=profiles.find(p=>p.id===kid.id); if(!fresh) return;
+  const owned=new Set(fresh.stickers.map(s=>s.id));
+  const pool=STICKER_POOL.filter(s=>!owned.has(s.id));
+  const pick=pool.length>0 ? pool[Math.floor(Math.random()*pool.length)] : STICKER_POOL[Math.floor(Math.random()*STICKER_POOL.length)];
+  fresh.stickers.push({...pick,ts:Date.now()});
+  saveProfiles(profiles);
+  document.getElementById('chest-icon').textContent='🎊';
+  document.getElementById('chest-open-btn').style.display='none';
+  document.getElementById('reveal-sticker-em').textContent=pick.emoji;
+  document.getElementById('reveal-sticker-name').textContent=pick.label;
+  document.getElementById('sticker-reveal-area').style.display='block';
+  renderKidSelector();
+  launchConfetti();
+}
+function closeChest() { document.getElementById('chest-ov').classList.remove('show'); }
+
+// ══════════════════════════════════════════════════════
+//  v2: STICKER ALBUM
+// ══════════════════════════════════════════════════════
+function showStickerAlbum() {
+  closeKidMenu();
+  renderAlbum();
+  document.getElementById('album-ov').classList.add('show');
+}
+function closeAlbum() { document.getElementById('album-ov').classList.remove('show'); }
+function renderAlbum() {
+  const profiles=loadProfiles();
+  const kid=profiles.find(p=>p.id===curKidId)||profiles[0]; if(!kid) return;
+  const owned=new Set(kid.stickers.map(s=>s.id));
+  const pct=Math.round(owned.size/STICKER_POOL.length*100);
+  document.getElementById('album-kid-name').textContent=`${kid.avatar} ${kid.name} 的貼紙冊`;
+  document.getElementById('album-kid-count').textContent=`已解鎖 ${owned.size} / ${STICKER_POOL.length} 張`;
+  document.getElementById('album-prog-fill').style.width=pct+'%';
+  const pctEl=document.getElementById('album-prog-pct');
+  if(pctEl) pctEl.textContent=pct+'%';
+  document.getElementById('album-grid').innerHTML=STICKER_POOL.map(s=>{
+    const isOwned=owned.has(s.id);
+    const own=kid.stickers.find(x=>x.id===s.id);
+    const dateStr=own?new Date(own.ts).toLocaleDateString('zh-TW',{month:'numeric',day:'numeric'}):'';
+    return `<div class="s-cell ${isOwned?'unlocked':'locked'}">
+      <span class="s-cell-em">${s.emoji}</span>
+      <div class="s-cell-lbl">${escHtml(s.label)}${isOwned&&dateStr?`<br><span style="font-size:9.5px;opacity:.7">${dateStr}解鎖</span>`:''}${!isOwned?'<br><span style="font-size:9.5px">🔒 未解鎖</span>':''}</div>
+    </div>`;
+  }).join('');
+}
+
+// ══════════════════════════════════════════════════════
+//  v2: EXAMPLE DRAWER
+// ══════════════════════════════════════════════════════
+function genExampleFallback(word) {
+  const t=[
+    `I can see a ${word} over there!`,
+    `She has a beautiful ${word}.`,
+    `The ${word} is very special.`,
+    `Can you find the ${word}?`,
+    `Look at that amazing ${word}!`,
+  ];
+  return t[word.charCodeAt(0)%t.length];
+}
+function updateExampleDrawer() {
+  const w=studyWords[studyIdx]; if(!w) return;
+  const exEn=w.example||genExampleFallback(w.word);
+  const exZh=w.exampleZh||'（試著把這個單字用在句子裡！）';
+  const re=new RegExp(`\\b(${w.word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})\\b`,'gi');
+  document.getElementById('ex-en').innerHTML=escHtml(exEn).replace(re,'<strong>$1</strong>');
+  document.getElementById('ex-zh').textContent=exZh;
+}
+function speakExample() {
+  const w=studyWords[studyIdx]; if(!w) return;
+  speakFallback(w.example||genExampleFallback(w.word),1.0);
+}
+
+// ══════════════════════════════════════════════════════
+//  v2: EGG LOCK (Parent Dashboard)
+// ══════════════════════════════════════════════════════
+let _eggClicks=0, _eggTimer=null, _eggLongTimer=null;
+function eggTriggerClick() {
+  _eggClicks++;
+  if(_eggTimer) clearTimeout(_eggTimer);
+  _eggTimer=setTimeout(()=>{_eggClicks=0;},2000);
+  const trig=document.getElementById('egg-trig');
+  if(trig){trig.classList.add('flash');setTimeout(()=>trig.classList.remove('flash'),1200);}
+  if(_eggClicks>=5){_eggClicks=0;clearTimeout(_eggTimer);setTimeout(showEggLock,300);}
+}
+function eggPressStart() {
+  _eggLongTimer=setTimeout(showEggLock,3000);
+}
+function eggPressEnd() {
+  if(_eggLongTimer){clearTimeout(_eggLongTimer);_eggLongTimer=null;}
+}
+function showEggLock() {
+  const pwd=localStorage.getItem(PARENT_PWD_KEY);
+  document.getElementById('egg-setup').style.display=pwd?'none':'block';
+  document.getElementById('egg-verify').style.display=pwd?'block':'none';
+  document.getElementById('egg-content').style.display='none';
+  if(!pwd){document.getElementById('egg-new-pwd').value='';document.getElementById('egg-new-pwd2').value='';document.getElementById('egg-setup-status').textContent='';}
+  else{document.getElementById('egg-pwd-input').value='';document.getElementById('egg-pwd-status').textContent='';}
+  document.getElementById('egg-ov').classList.add('show');
+  setTimeout(()=>{
+    const inp=pwd?document.getElementById('egg-pwd-input'):document.getElementById('egg-new-pwd');
+    if(inp) inp.focus();
+  },200);
+}
+function saveParentPwd() {
+  const pwd=document.getElementById('egg-new-pwd').value.trim();
+  const pwd2=document.getElementById('egg-new-pwd2').value.trim();
+  const st=document.getElementById('egg-setup-status');
+  if(!pwd||pwd.length<4){st.textContent='❌ 密碼至少 4 個字元';return;}
+  if(pwd!==pwd2){st.textContent='❌ 兩次輸入不一致';return;}
+  localStorage.setItem(PARENT_PWD_KEY,pwd);
+  showAnalytics();
+}
+function verifyParentPwd() {
+  const inp=document.getElementById('egg-pwd-input').value.trim();
+  if(inp===localStorage.getItem(PARENT_PWD_KEY)){showAnalytics();}
+  else{
+    document.getElementById('egg-pwd-status').textContent='❌ 密碼錯誤';
+    document.getElementById('egg-pwd-input').value='';
+    setTimeout(()=>{document.getElementById('egg-pwd-status').textContent='';},2000);
+  }
+}
+function showAnalytics() {
+  document.getElementById('egg-setup').style.display='none';
+  document.getElementById('egg-verify').style.display='none';
+  document.getElementById('egg-content').style.display='block';
+  renderAnalytics();
+}
+function closeEggLock() { document.getElementById('egg-ov').classList.remove('show'); }
+function resetParentPwd() {
+  if(!confirm('確定要重設密碼嗎？')) return;
+  localStorage.removeItem(PARENT_PWD_KEY);
+  document.getElementById('egg-content').style.display='none';
+  document.getElementById('egg-setup').style.display='block';
+  document.getElementById('egg-new-pwd').value='';
+  document.getElementById('egg-new-pwd2').value='';
+  document.getElementById('egg-setup-status').textContent='';
+}
+
+// ══════════════════════════════════════════════════════
+//  v2: ANALYTICS
+// ══════════════════════════════════════════════════════
+function renderAnalytics() {
+  const profiles=loadProfiles();
+  const allWords=loadWords();
+  const topErrors=[...allWords].filter(w=>w.errorCount>0).sort((a,b)=>b.errorCount-a.errorCount).slice(0,5);
+  let html='';
+  for(const kid of profiles){
+    const log=kid.quizLog||[];
+    const avgAcc=log.length?Math.round(log.reduce((s,l)=>s+(l.pct||0),0)/log.length):null;
+    html+=`<div style="margin-bottom:20px;padding-bottom:18px;border-bottom:2px solid var(--border)">
+      <div style="font-size:17px;font-weight:900;margin-bottom:10px">${kid.avatar} ${escHtml(kid.name)}</div>
+      <div style="font-size:12px;color:var(--ink2);font-weight:700;margin-bottom:4px">累積完美跟讀：${kid.stars3||0} 次 ⭐ &nbsp;｜&nbsp; 貼紙：${kid.stickers.length} 張</div>`;
+    if(avgAcc!==null){
+      html+=`<div style="margin:10px 0 14px"><div style="font-size:12px;color:var(--ink2);font-weight:700;margin-bottom:4px">平均闖關正確率（${log.length} 次）</div>
+        <div class="acc-bar-wrap"><div class="acc-bar-fill" style="width:${avgAcc}%"></div></div>
+        <div style="font-size:12px;color:var(--ink2);margin-top:3px;font-weight:600">${avgAcc}%</div></div>`;
+    } else {
+      html+=`<div style="font-size:13px;color:var(--ink2);margin:8px 0 14px">尚無闖關記錄</div>`;
+    }
+    html+=`<div style="font-size:11px;font-weight:800;color:var(--ink2);text-transform:uppercase;letter-spacing:1px;margin-bottom:8px">答錯魔王 Top 5</div>`;
+    if(topErrors.length){
+      html+=topErrors.map(w=>`<div class="err-word-row">
+        <div><div style="font-size:16px;font-weight:800">${escHtml(w.word)}</div><div style="font-size:12px;color:var(--ink2)">${escHtml(w.chinese||'')}</div></div>
+        <div style="font-size:14px;font-weight:700;color:var(--red)">錯 ${w.errorCount} 次</div></div>`).join('');
+    } else {
+      html+='<div style="font-size:13px;color:var(--ink2);padding:6px 0">目前沒有錯誤記錄</div>';
+    }
+    html+='</div>';
+  }
+  if(!profiles.length) html='<div class="empty-state"><span class="ei">👶</span>還沒有小朋友資料</div>';
+  document.getElementById('analytics-body').innerHTML=html;
+  document.getElementById('groq-advice-area').innerHTML='<div style="font-size:13px;color:var(--ink2);padding:8px 0;display:flex;align-items:center;gap:7px">⏳ 正在生成 AI 親職建議…</div>';
+  genGroqAdvice(profiles,allWords);
+}
+async function genGroqAdvice(profiles,allWords) {
+  const apiKey=getApiKey();
+  if(!apiKey){
+    document.getElementById('groq-advice-area').innerHTML='<div class="groq-advice">💡 設定 Groq API Key 後可獲得 AI 個人化學習建議！</div>';
+    return;
+  }
+  const topErr=[...allWords].filter(w=>w.errorCount>0).sort((a,b)=>b.errorCount-a.errorCount).slice(0,5);
+  const errList=topErr.map(w=>`${w.word}（錯${w.errorCount}次）`).join('、');
+  const prompt=`你是一位溫暖的兒童英文學習顧問。以下是小學生的英文學習數據：\n- 共 ${allWords.length} 個單字，常錯：${errList||'目前無記錄'}\n- 共 ${profiles.length} 位孩子\n\n請用繁體中文給家長 3 條溫暖實用的親職建議，幫助孩子改善英文學習。語氣輕鬆，每條 ≤ 30 字，直接輸出條列，無需標題。`;
+  try{
+    const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},
+      body:JSON.stringify({model:'llama-3.3-70b-versatile',messages:[{role:'user',content:prompt}],max_tokens:300,temperature:.7})
+    });
+    if(!r.ok) throw new Error('');
+    const j=await r.json();
+    const advice=j.choices?.[0]?.message?.content||'';
+    document.getElementById('groq-advice-area').innerHTML=`<div class="groq-advice">💌 <strong>AI 親職建議</strong><br><br>${escHtml(advice).replace(/\n/g,'<br>')}</div>`;
+  }catch{
+    document.getElementById('groq-advice-area').innerHTML='<div class="groq-advice">💡 請確認 Groq API Key 已設定，即可獲得個人化學習建議。</div>';
+  }
+}
+
 // ═══════════════════════════════════════════
 //  INIT
 // ═══════════════════════════════════════════
@@ -1962,6 +2524,9 @@ refreshApiKeyUI();
 
 // 初次開啟就解鎖 import（預設頁），不需要數學鎖
 mathUnlocked.add('import');
+
+// v2: 初始化孩子選擇器
+initKidSelector();
 
 (function restoreLastTab(){
   const last=localStorage.getItem(LAST_TAB_KEY)||'import';
