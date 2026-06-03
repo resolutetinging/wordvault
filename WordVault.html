@@ -900,6 +900,21 @@
   </div>
 </div>
 
+<!-- English Word Editor Dialog -->
+<div class="overlay" id="en-editor-overlay" onclick="closeEnEditor()">
+  <div class="dialog" onclick="event.stopPropagation()" style="max-width:320px;">
+    <h3 style="margin-bottom:4px;">✏️ 編輯英文單字</h3>
+    <p style="font-size:12px;color:var(--ink2);margin-bottom:12px;">修改後原有的中文翻譯與標籤會保留</p>
+    <input type="text" id="en-editor-input" placeholder="輸入正確英文…"
+           style="width:100%;margin-bottom:14px;"
+           onkeydown="if(event.key==='Enter')saveEnEditor()" />
+    <div class="btn-row" style="margin-top:0;">
+      <button class="btn btn-primary" onclick="saveEnEditor()">儲存</button>
+      <button class="btn btn-outline" onclick="closeEnEditor()">取消</button>
+    </div>
+  </div>
+</div>
+
 <!-- Translation Editor Dialog -->
 <div class="overlay" id="zh-editor-overlay" onclick="closeZhEditor()">
   <div class="dialog" onclick="event.stopPropagation()" style="max-width:320px;">
@@ -2135,6 +2150,7 @@ function renderBank() {
         return wordCardHTML(w, {
           showError: true,
           actions: `<button class="btn-icon" onclick="speak('${escJs(w.word)}','${escJs(w.audioUrl||'')}')" title="朗讀">🔊</button>
+                    <button class="btn-icon" onclick="openEnEditor('${escJs(w.word)}')" title="編輯英文">Aa</button>
                     <button class="btn-icon" onclick="openZhEditor('${escJs(w.word)}')" title="編輯中文">✏️</button>
                     <button class="btn-icon" onclick="openTagEditor('${escJs(w.word)}')" title="編輯標籤">🏷</button>
                     <button class="btn-icon" onclick="confirmDeleteWord('${escJs(w.word)}')" title="刪除">🗑</button>`
@@ -2284,6 +2300,34 @@ function closeTagEditor() {
 }
 
 let zhEditorWord = '';
+let enEditorWord = '';
+function openEnEditor(word) {
+  enEditorWord = word;
+  const inp = document.getElementById('en-editor-input');
+  inp.value = word;
+  document.getElementById('en-editor-overlay').style.display = 'flex';
+  setTimeout(() => { inp.focus(); inp.select(); }, 50);
+}
+function closeEnEditor() {
+  document.getElementById('en-editor-overlay').style.display = 'none';
+}
+function saveEnEditor() {
+  const newWord = document.getElementById('en-editor-input').value.trim();
+  if (!newWord) { alert('請輸入英文單字'); return; }
+  if (newWord === enEditorWord) { closeEnEditor(); return; }
+  const words = loadWords();
+  if (words.some(w => w.word === newWord)) { alert(`「${newWord}」已存在單字庫`); return; }
+  const target = words.find(w => w.word === enEditorWord);
+  if (target) {
+    target.word = newWord;
+    target.audioUrl = '';   // 清除舊發音 URL，下次自動重抓
+    saveWords(words);
+  }
+  closeEnEditor();
+  renderBank();
+  updateGlobalCount();
+}
+
 function openZhEditor(word) {
   zhEditorWord = word;
   const target = loadWords().find(w => w.word === word);
