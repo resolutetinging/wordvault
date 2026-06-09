@@ -1656,17 +1656,35 @@ function speak(word, audioUrl) {
 }
 
 async function _fetchAndPlayAudio(word) {
-  // 1. 先問 dict API
+  const w = word.toLowerCase();
+  // 1. dict API（有完整 phonetics，可能指向外部 CDN）
   const data = await fetchDictData(word).catch(() => null);
   if (data?.audioUrl) {
-    _cacheAudioUrl(word, data.audioUrl); // 存起來，下次直接用（無延遲）
+    _cacheAudioUrl(word, data.audioUrl);
     _playAudioUrl(data.audioUrl);
     return;
   }
-  // 2. dict API 無此字（如 plagiarizer）→ Google TTS 走 browser media 通道
-  const gttsUrl = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q='
-    + encodeURIComponent(word);
-  _playAudioUrl(gttsUrl);
+  // 2. 直接 race 多個靜態 CDN（不需額外 API 呼叫）
+  const winner = await Promise.any([
+    _tryAudioLoad(`https://api.dictionaryapi.dev/media/pronunciations/en/${w}-us.mp3`),
+    _tryAudioLoad(`https://ssl.gstatic.com/dictionary/static/sounds/oxford/${w}--_us_1.mp3`),
+    _tryAudioLoad(`https://ssl.gstatic.com/dictionary/static/sounds/20200429/${w}_en_us_1.mp3`),
+  ]).catch(() => null);
+  if (winner) {
+    _cacheAudioUrl(word, winner.url);
+    winner.a.play().then(() => { try { window.speechSynthesis.cancel(); } catch(e) {} }).catch(() => {});
+  }
+  // 若全部 fail → synthesis 繼續執行
+}
+
+// 預先載入音訊，成功則 resolve {a, url}，失敗則 reject
+function _tryAudioLoad(url, ms = 4000) {
+  return new Promise((res, rej) => {
+    const a = new Audio(url);
+    a.addEventListener('canplaythrough', () => res({ a, url }), { once: true });
+    a.addEventListener('error', rej, { once: true });
+    setTimeout(rej, ms);
+  });
 }
 
 function _playAudioUrl(url) {
@@ -2971,6 +2989,23 @@ updateGlobalCount();
 checkBackupReminder();
 refreshApiKeyUI();
 refreshGistUI();
+
+// 背景預抓所有缺 audioUrl 的字（一次性，之後快取命中即無延遲）
+(async function prefetchAudioUrls() {
+  await new Promise(r => setTimeout(r, 2000)); // 讓頁面先渲染完
+  const words = loadWords();
+  const missing = words.filter(w => w.word && !w.audioUrl);
+  if (!missing.length) return;
+  let updated = false;
+  for (const w of missing) {
+    const data = await fetchDictData(w.word).catch(() => null);
+    if (data?.audioUrl) {
+      _cacheAudioUrl(w.word, data.audioUrl);
+      updated = true;
+    }
+    await new Promise(r => setTimeout(r, 300));
+  }
+})();
 
 // Restore last active tab
 (function restoreLastTab() {
