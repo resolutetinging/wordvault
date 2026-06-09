@@ -1639,26 +1639,27 @@ function renderStudyList() {
 }
 
 function speak(word, audioUrl) {
+  // 同步先啟動 synthesis（iOS user gesture 要求必須在同步堆疊內）
+  _startSynthesis(word);
+  // 同時非同步取得真正音訊 URL，播放後接管（browser media 通道，不被 YouTube ducking）
   if (audioUrl) {
-    const a = new Audio(audioUrl);
-    a.volume = 1;
-    a.play().catch(() => speakViaGTTS(word));
-    return;
+    _playAudioUrl(audioUrl);
+  } else {
+    fetchDictData(word)
+      .then(data => { if (data?.audioUrl) _playAudioUrl(data.audioUrl); })
+      .catch(() => {});
   }
-  speakViaGTTS(word);
 }
 
-function speakViaGTTS(word) {
-  // Google TTS 走 new Audio()，與 YouTube 走同一條瀏覽器媒體通道（耳機可用）
-  const url = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q='
-    + encodeURIComponent(word);
+function _playAudioUrl(url) {
   const a = new Audio(url);
   a.volume = 1;
-  a.play().catch(() => speakFallback(word));
+  a.play()
+    .then(() => { try { window.speechSynthesis.cancel(); } catch(e) {} })
+    .catch(() => {});
 }
 
-function speakFallback(word) {
-  // 最後手段：speechSynthesis（走系統 TTS，耳機情境可能不通）
+function _startSynthesis(word) {
   if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
   const utt = new SpeechSynthesisUtterance(word);
@@ -1670,6 +1671,9 @@ function speakFallback(word) {
   if (v) utt.voice = v;
   window.speechSynthesis.speak(utt);
 }
+
+// 保留舊名稱供外部呼叫（如 kids 版）
+function speakFallback(word) { _startSynthesis(word); }
 
 async function fetchDictData(word) {
   try {
