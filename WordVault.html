@@ -1640,20 +1640,34 @@ function renderStudyList() {
 
 function speak(word, audioUrl) {
   if (audioUrl) {
-    const audio = new Audio(audioUrl);
-    audio.play().catch(() => speakFallback(word));
+    const a = new Audio(audioUrl);
+    a.volume = 1;
+    a.play().catch(() => speakViaGTTS(word));
     return;
   }
-  speakFallback(word);
+  speakViaGTTS(word);
+}
+
+function speakViaGTTS(word) {
+  // Google TTS 走 new Audio()，與 YouTube 走同一條瀏覽器媒體通道（耳機可用）
+  const url = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q='
+    + encodeURIComponent(word);
+  const a = new Audio(url);
+  a.volume = 1;
+  a.play().catch(() => speakFallback(word));
 }
 
 function speakFallback(word) {
-  if (!('speechSynthesis' in window)) { alert('您的瀏覽器不支援語音朗讀'); return; }
+  // 最後手段：speechSynthesis（走系統 TTS，耳機情境可能不通）
+  if (!('speechSynthesis' in window)) return;
   window.speechSynthesis.cancel();
   const utt = new SpeechSynthesisUtterance(word);
   utt.lang = 'en-US';
   utt.rate = 0.82;
   utt.pitch = 1;
+  const voices = window.speechSynthesis.getVoices();
+  const v = voices.find(v => v.lang.startsWith('en-US')) || voices.find(v => v.lang.startsWith('en'));
+  if (v) utt.voice = v;
   window.speechSynthesis.speak(utt);
 }
 
