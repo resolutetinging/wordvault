@@ -1639,16 +1639,34 @@ function renderStudyList() {
 }
 
 function speak(word, audioUrl) {
-  // 同步先啟動 synthesis（iOS user gesture 要求必須在同步堆疊內）
-  _startSynthesis(word);
-  // 同時非同步取得真正音訊 URL，播放後接管（browser media 通道，不被 YouTube ducking）
   if (audioUrl) {
-    _playAudioUrl(audioUrl);
-  } else {
-    fetchDictData(word)
-      .then(data => { if (data?.audioUrl) _playAudioUrl(data.audioUrl); })
-      .catch(() => {});
+    // 有快取 URL：直接播放，不啟動 synthesis（避免兩聲重疊/遠遠的效果）
+    const a = new Audio(audioUrl);
+    a.volume = 1;
+    a.play().catch(() => {
+      // 快取 URL 失效：synthesis 保底 + 重新 fetch
+      _startSynthesis(word);
+      _fetchAndPlayAudio(word);
+    });
+    return;
   }
+  // 無快取：synthesis 同步保底（iOS user gesture 要求）+ 非同步抓真正音訊
+  _startSynthesis(word);
+  _fetchAndPlayAudio(word);
+}
+
+async function _fetchAndPlayAudio(word) {
+  // 1. 先問 dict API
+  const data = await fetchDictData(word).catch(() => null);
+  if (data?.audioUrl) {
+    _cacheAudioUrl(word, data.audioUrl); // 存起來，下次直接用（無延遲）
+    _playAudioUrl(data.audioUrl);
+    return;
+  }
+  // 2. dict API 無此字（如 plagiarizer）→ Google TTS 走 browser media 通道
+  const gttsUrl = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=en&q='
+    + encodeURIComponent(word);
+  _playAudioUrl(gttsUrl);
 }
 
 function _playAudioUrl(url) {
@@ -1672,7 +1690,15 @@ function _startSynthesis(word) {
   window.speechSynthesis.speak(utt);
 }
 
-// 保留舊名稱供外部呼叫（如 kids 版）
+function _cacheAudioUrl(word, url) {
+  const words = loadWords();
+  const idx = words.findIndex(w => w.word.toLowerCase() === word.toLowerCase());
+  if (idx >= 0 && !words[idx].audioUrl) {
+    words[idx].audioUrl = url;
+    saveWords(words);
+  }
+}
+
 function speakFallback(word) { _startSynthesis(word); }
 
 async function fetchDictData(word) {
