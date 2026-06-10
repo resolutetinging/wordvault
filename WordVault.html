@@ -1672,7 +1672,9 @@ async function _fetchAndPlayAudio(word) {
   ]).catch(() => null);
   if (winner) {
     _cacheAudioUrl(word, winner.url);
-    winner.a.play().then(() => { try { window.speechSynthesis.cancel(); } catch(e) {} }).catch(() => {});
+    try { window.speechSynthesis.cancel(); } catch(e) {}
+    winner.a.volume = 1;
+    winner.a.play().catch(() => {});
   }
   // 若全部 fail → synthesis 繼續執行
 }
@@ -1688,11 +1690,10 @@ function _tryAudioLoad(url, ms = 4000) {
 }
 
 function _playAudioUrl(url) {
+  try { window.speechSynthesis.cancel(); } catch(e) {}
   const a = new Audio(url);
   a.volume = 1;
-  a.play()
-    .then(() => { try { window.speechSynthesis.cancel(); } catch(e) {} })
-    .catch(() => {});
+  a.play().catch(() => {});
 }
 
 function _startSynthesis(word) {
