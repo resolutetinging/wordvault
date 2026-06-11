@@ -780,6 +780,14 @@
 
     <div id="study-list"></div>
     <div id="study-quiz-btn-row" style="display:none;padding:4px 0 20px;">
+      <div style="margin-bottom:8px;">
+        <div style="font-size:11px;color:var(--ink2);margin-bottom:5px;">考驗方向</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;">
+          <span class="tag-chip active" id="dir-random" onclick="setStudyQuizDir('random')" style="cursor:pointer;">🔀 隨機</span>
+          <span class="tag-chip" id="dir-en2zh" onclick="setStudyQuizDir('en2zh')" style="cursor:pointer;">EN → 中</span>
+          <span class="tag-chip" id="dir-zh2en" onclick="setStudyQuizDir('zh2en')" style="cursor:pointer;">中 → EN</span>
+        </div>
+      </div>
       <button class="btn btn-gold" style="width:100%;" onclick="quizFromStudy()">🎯 考驗這批單字</button>
     </div>
   </section>
@@ -1777,6 +1785,15 @@ let quizState = null;
 let quizTimer = null;
 let quizSelectedTags = new Set();
 let quizSelectedResources = new Set();
+let studyQuizDir = 'random';
+
+function setStudyQuizDir(dir) {
+  studyQuizDir = dir;
+  ['random','en2zh','zh2en'].forEach(d => {
+    const el = document.getElementById('dir-' + d);
+    if (el) el.classList.toggle('active', d === dir);
+  });
+}
 
 function renderQuizResourceFilter() {
   const resources  = getAllResources();
@@ -1830,7 +1847,7 @@ function quizFromStudy() {
   showScreen('quiz', quizBtn);
 
   const minutes = parseInt(document.getElementById('quiz-minutes').value) || 20;
-  const mode    = document.getElementById('quiz-mode').value;
+  const mode    = studyQuizDir;
   shuffle(pool);
 
   quizState = {
@@ -1948,8 +1965,9 @@ function renderQuestion() {
   const distractors = others.slice(0, 3);
 
   let question, correctAns, choices;
+  const effectiveMode = mode === 'random' ? (Math.random() < 0.5 ? 'en2zh' : 'zh2en') : mode;
 
-  if (mode === 'en2zh') {
+  if (effectiveMode === 'en2zh') {
     question = current.word;
     document.getElementById('quiz-sub').textContent = current.tag ? `(${current.tag})` : '';
     correctAns = current.chinese;
