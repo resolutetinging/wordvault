@@ -837,7 +837,7 @@
   <div class="bank-controls">
     <input type="text" id="bank-search" placeholder="🔍 搜尋單字 / 中文…" oninput="renderBank()" />
     <button class="btn-icon" onclick="confirmClearAll()" title="清空全部" style="flex-shrink:0;">🗑</button>
-    <span id="egg-trig" class="egg-trig"
+    <span id="egg-trig" class="egg-trig" title="長按3秒看成長追蹤"
       onclick="eggTriggerClick()"
       onmousedown="eggPressStart()" onmouseup="eggPressEnd()" onmouseleave="eggPressEnd()"
       ontouchstart="eggPressStart()" ontouchend="eggPressEnd()">🌈</span>
@@ -998,7 +998,7 @@
       <div style="font-size:40px;text-align:center;margin-bottom:12px">🔑</div>
       <div style="font-size:20px;font-weight:900;margin-bottom:6px">請輸入密碼</div>
       <div style="font-size:14px;color:var(--ink2);margin-bottom:18px;font-weight:500">驗證通過後即可查看成長追蹤。</div>
-      <input type="password" id="egg-pwd-input" placeholder="輸入密碼" onkeydown="if(event.key==='Enter')verifyParentPwd()" />
+      <input type="password" id="egg-pwd-input" placeholder="輸入密碼（預設 0000）" onkeydown="if(event.key==='Enter')verifyParentPwd()" />
       <div id="egg-pwd-status" style="min-height:18px;font-size:13px;color:var(--red);margin-top:8px;font-weight:700"></div>
       <div class="btn-row" style="margin-top:12px;">
         <button class="btn btn-green" onclick="verifyParentPwd()">✓ 確認</button>
