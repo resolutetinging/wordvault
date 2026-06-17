@@ -514,10 +514,24 @@
     .album-prog-fill{height:100%;background:linear-gradient(90deg,var(--yellow),var(--orange));border-radius:5px;transition:width .4s ease}
 
     /* ── v2: Egg Lock ── */
-    .egg-trig{font-size:16px;cursor:pointer;user-select:none;opacity:.28;transition:opacity .3s;padding:2px 4px;border-radius:4px;line-height:1;flex-shrink:0}
-    .egg-trig:hover{opacity:.65}
+    .egg-trig{
+      position:relative;width:44px;height:44px;padding:0;border-radius:14px;
+      display:inline-flex;align-items:center;justify-content:center;font-size:20px;
+      background:white;border:2.5px solid var(--border);
+      cursor:pointer;user-select:none;transition:all .15s;
+      box-shadow:0 2px 8px rgba(0,0,0,.06);flex-shrink:0;opacity:.5;
+    }
+    .egg-trig:hover{background:var(--yellow-lt);border-color:var(--yellow);transform:scale(1.08);opacity:1;}
+    .egg-trig:active{transform:scale(.93);}
+    .egg-trig::after{
+      content:attr(data-tip);position:absolute;bottom:calc(100% + 6px);left:50%;
+      transform:translateX(-50%);background:rgba(40,38,31,.85);color:white;
+      font-size:11px;font-weight:600;white-space:nowrap;border-radius:6px;
+      padding:4px 8px;opacity:0;pointer-events:none;transition:opacity .1s;
+    }
+    .egg-trig:hover::after{opacity:1;}
     .egg-trig.flash{animation:eggF .25s ease 4}
-    @keyframes eggF{0%,100%{background:transparent}50%{background:var(--yellow-lt)}}
+    @keyframes eggF{0%,100%{background:white}50%{background:var(--yellow-lt)}}
     .egg-ov{display:none;position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:600;align-items:center;justify-content:center;padding:24px}
     .egg-ov.show{display:flex}
     .egg-box{background:white;border-radius:28px;padding:32px 26px;width:100%;max-width:390px;box-shadow:0 16px 60px rgba(0,0,0,.3);animation:fadeIn .25s ease;max-height:88vh;overflow-y:auto}
@@ -837,7 +851,7 @@
   <div class="bank-controls">
     <input type="text" id="bank-search" placeholder="🔍 搜尋單字 / 中文…" oninput="renderBank()" />
     <button class="btn-icon" onclick="confirmClearAll()" title="清空全部" style="flex-shrink:0;">🗑</button>
-    <span id="egg-trig" class="egg-trig" title="長按3秒看成長追蹤"
+    <span id="egg-trig" class="egg-trig" data-tip="長按3秒看成長追蹤"
       onclick="eggTriggerClick()"
       onmousedown="eggPressStart()" onmouseup="eggPressEnd()" onmouseleave="eggPressEnd()"
       ontouchstart="eggPressStart()" ontouchend="eggPressEnd()">🌈</span>
