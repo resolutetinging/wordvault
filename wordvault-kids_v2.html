@@ -338,6 +338,10 @@
     .bank-res { display: inline-block; font-size: 11px; font-weight: 700;
       background: var(--blue-lt); color: var(--blue-dk); border-radius: 6px; padding: 2px 8px; margin-top: 5px; }
     .bank-err { font-size: 11px; color: var(--red); font-weight: 700; }
+    .bank-def { font-size: 12.5px; color: var(--ink2); margin-top: 4px; font-style: italic; line-height: 1.5; font-weight: 500; }
+    .bank-examples { margin-top: 6px; border-left: 3px solid var(--green-lt, #c8f0d8); padding-left: 8px; }
+    .bank-ex-en { font-size: 12.5px; color: var(--ink); font-weight: 600; line-height: 1.5; }
+    .bank-ex-zh { font-size: 11.5px; color: var(--ink2); font-weight: 500; line-height: 1.4; margin-bottom: 4px; }
     .bank-actions { display: flex; flex-direction: column; gap: 6px; }
     .bank-controls { display: flex; gap: 8px; align-items: center; margin-bottom: 14px; }
     .bank-controls input { flex: 1; }
@@ -714,8 +718,7 @@
     <div id="example-drawer-wrap" style="display:none">
       <div class="example-drawer">
         <div class="ex-label">🔤 例句練習</div>
-        <div class="ex-en" id="ex-en"></div>
-        <div class="ex-zh" id="ex-zh"></div>
+        <div id="ex-list"></div>
         <div style="margin-top:8px;"><button class="ex-tts-btn" onclick="speakExample()">🔊 朗讀例句</button></div>
       </div>
     </div>
@@ -879,6 +882,19 @@
     <div class="btn-row">
       <button class="btn btn-primary" onclick="saveZhEditor()">儲存</button>
       <button class="btn btn-outline" onclick="closeZhEditor()">取消</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Example Editor ═══ -->
+<div class="overlay" id="ex-editor-overlay" onclick="closeExEditor()">
+  <div class="dialog" onclick="event.stopPropagation()" style="max-width:360px;">
+    <h3>📝 編輯例句</h3>
+    <p id="ex-editor-word" style="font-size:13px;color:var(--ink2);margin-bottom:12px;font-weight:700;"></p>
+    <div id="ex-editor-fields"></div>
+    <div class="btn-row" style="margin-top:14px;">
+      <button class="btn btn-primary" onclick="saveExEditor()">儲存</button>
+      <button class="btn btn-outline" onclick="closeExEditor()">取消</button>
     </div>
   </div>
 </div>
@@ -1353,8 +1369,8 @@ async function batchTranslate() {
       const wStr  = chunk.map(w=>w.chinese?`${w.word} [中文：${w.chinese}]`:w.word).join('\n');
       const hasFull = chunk.some(w=>!w.chinese);
       const sys = hasFull
-        ? 'You are a dictionary API. Return ONLY a flat JSON object where each key is exactly the English word as provided, and each value is {chinese, pos, pronunciation, emoji}. chinese must be Traditional Chinese with POS prefix (e.g. "n.蘋果"). emoji must be a single emoji that visually represents the word (e.g. "🍎" for apple). Do NOT wrap in any container key. Example: {"apple":{"chinese":"n.蘋果","pos":"n","pronunciation":"/ˈæpəl/","emoji":"🍎"}}'
-        : 'You are a dictionary API. Return ONLY a flat JSON object where each key is exactly the English word (no brackets), and each value is {pos, pronunciation, emoji}. emoji must be a single emoji that visually represents the word. Do NOT wrap in any container key.';
+        ? 'You are a dictionary API. Return ONLY a flat JSON object where each key is exactly the English word as provided, and each value is {chinese, pos, pronunciation, emoji, englishDef, examples}. chinese is the Traditional Chinese translation with NO part-of-speech prefix (e.g. "蘋果" not "n.蘋果"). pos is the POS abbreviation (e.g. "n"). pronunciation is KK phonetic notation. emoji is a single representative emoji. englishDef is a concise English definition. examples is an array of exactly 3 objects each with {en, zh} where en is an example sentence and zh is its Traditional Chinese translation. Do NOT wrap in any container key. Example: {"apple":{"chinese":"蘋果","pos":"n","pronunciation":"/ˈæpəl/","emoji":"🍎","englishDef":"a round fruit with red or green skin","examples":[{"en":"I eat an apple every day.","zh":"我每天吃一顆蘋果。"},{"en":"She gave me a red apple.","zh":"她給了我一顆紅蘋果。"},{"en":"An apple a day keeps the doctor away.","zh":"每天一顆蘋果，醫生遠離我。"}]}}'
+        : 'You are a dictionary API. Return ONLY a flat JSON object where each key is exactly the English word (no brackets), and each value is {pos, pronunciation, emoji, englishDef, examples}. englishDef is a concise English definition. examples is an array of exactly 3 {en, zh} objects where en is an example sentence and zh is its Traditional Chinese translation. emoji must be a single representative emoji. Do NOT wrap in any container key.';
 
       const resp = await groqFetch({
         model:'llama-3.3-70b-versatile', temperature:0.1, max_tokens:2000,
@@ -1398,9 +1414,17 @@ async function batchTranslate() {
         const f=findT(w.word); if(!f) continue;
         if (!w.chinese) {
           const zh = String(f.chinese||'').trim();
-          if (zh) { w.chinese=zh; w.pronunciation=stripSlashes(f.pronunciation); w.pos=String(f.pos||'').trim(); w.emoji=String(f.emoji||'').trim(); autoTagByPos(w); translated++; }
+          if (zh) {
+            w.chinese=zh; w.pronunciation=stripSlashes(f.pronunciation); w.pos=String(f.pos||'').trim(); w.emoji=String(f.emoji||'').trim();
+            if(f.englishDef) w.englishDef=String(f.englishDef).trim();
+            if(Array.isArray(f.examples)&&f.examples.length) w.examples=f.examples.slice(0,3).map(e=>({en:String(e.en||''),zh:String(e.zh||'')}));
+            autoTagByPos(w); translated++;
+          }
         } else if (!w.pos) {
-          w.pronunciation=stripSlashes(f.pronunciation||w.pronunciation); w.pos=String(f.pos||'').trim(); if(!w.emoji) w.emoji=String(f.emoji||'').trim(); autoTagByPos(w); translated++;
+          w.pronunciation=stripSlashes(f.pronunciation||w.pronunciation); w.pos=String(f.pos||'').trim(); if(!w.emoji) w.emoji=String(f.emoji||'').trim();
+          if(f.englishDef&&!w.englishDef) w.englishDef=String(f.englishDef).trim();
+          if(Array.isArray(f.examples)&&f.examples.length&&!w.examples) w.examples=f.examples.slice(0,3).map(e=>({en:String(e.en||''),zh:String(e.zh||'')}));
+          autoTagByPos(w); translated++;
         }
       }
       saveWords(all);
@@ -2163,19 +2187,30 @@ function renderBank() {
     const res=(w.resource||'').split(',').map(r=>cleanStr(r)).filter(Boolean)
       .map(r=>`<span class="bank-res">${escHtml(r)}</span>`).join(' ');
     const _wp=stripSlashes(w.pronunciation);
+    const zhDisplay=stripPosPrefix(w.chinese||'（尚未翻譯）',w.pos);
+    const defHtml=w.englishDef?`<div class="bank-def">${escHtml(w.englishDef)}</div>`:'';
+    let exHtml='';
+    if(Array.isArray(w.examples)&&w.examples.length){
+      exHtml='<div class="bank-examples">'+w.examples.map(e=>`<div class="bank-ex-en">${escHtml(e.en)}</div><div class="bank-ex-zh">${escHtml(e.zh)}</div>`).join('')+'</div>';
+    } else if(w.example){
+      exHtml='<div class="bank-examples"><div class="bank-ex-en">'+escHtml(w.example)+'</div>'+(w.exampleZh?`<div class="bank-ex-zh">${escHtml(w.exampleZh)}</div>`:'' )+'</div>';
+    }
     return `
       <div class="bank-word-card">
         <div>
           <div class="bank-en">${escHtml(w.word)}${w.pos?`<span class="bank-pos">${escHtml(w.pos)}</span>`:''}</div>
           ${_wp?`<div class="bank-pron">/${escHtml(_wp)}/</div>`:''}
-          <div class="bank-zh">${escHtml(w.chinese||'（尚未翻譯）')}</div>
-          ${res?`<div style="margin-top:4px;">${res}</div>`:''}
+          <div class="bank-zh">${escHtml(zhDisplay)}</div>
+          ${defHtml}
+          ${exHtml}
+          ${res?`<div style="margin-top:6px;">${res}</div>`:''}
           ${w.errorCount?`<div class="bank-err">❌ 錯 ${w.errorCount} 次</div>`:''}
         </div>
         <div class="bank-actions">
           <button class="btn-icon" onclick="speak('${escJs(w.word)}','${escJs(w.audioUrl||'')}')">🔊</button>
           <button class="btn-icon" onclick="openEnEditor('${escJs(w.word)}')" title="編輯英文">Aa</button>
           <button class="btn-icon" onclick="openZhEditor('${escJs(w.word)}')" title="編輯中文">✏️</button>
+          <button class="btn-icon" onclick="openExEditor('${escJs(w.word)}')" title="編輯例句">📝</button>
           <button class="btn-icon" onclick="confirmDeleteWord('${escJs(w.word)}')" style="background:var(--red-lt);border-color:var(--red);">🗑</button>
         </div>
       </div>`;
@@ -2231,6 +2266,48 @@ function saveZhEditor() {
   const target=words.find(w=>w.word===zhEditorWord);
   if (target) { target.chinese=val; saveWords(words); }
   closeZhEditor(); renderBank();
+}
+
+let exEditorWord='';
+function openExEditor(word) {
+  exEditorWord=word;
+  const target=loadWords().find(w=>w.word===word);
+  if (!target) return;
+  document.getElementById('ex-editor-word').textContent=word;
+  const src=Array.isArray(target.examples)&&target.examples.length
+    ? target.examples
+    : [{en:target.example||'',zh:target.exampleZh||''},{en:'',zh:''},{en:'',zh:''}];
+  const pairs=[0,1,2].map(i=>src[i]||{en:'',zh:''});
+  const fields=document.getElementById('ex-editor-fields');
+  fields.innerHTML=pairs.map((p,i)=>`
+    <div style="margin-bottom:12px;">
+      <label style="font-size:12px;font-weight:700;color:var(--ink2);">例句 ${i+1} 英文</label>
+      <input type="text" id="ex-en-${i}" value="${escHtml(p.en||'')}" placeholder="English sentence…" style="width:100%;margin:4px 0 6px;" />
+      <label style="font-size:12px;font-weight:700;color:var(--ink2);">例句 ${i+1} 中文</label>
+      <input type="text" id="ex-zh-${i}" value="${escHtml(p.zh||'')}" placeholder="中文翻譯…" style="width:100%;margin:4px 0 0;" />
+    </div>`).join('');
+  document.getElementById('ex-editor-overlay').classList.add('show');
+  setTimeout(()=>document.getElementById('ex-en-0').focus(),50);
+}
+function closeExEditor() { document.getElementById('ex-editor-overlay').classList.remove('show'); }
+function saveExEditor() {
+  const words=loadWords();
+  const target=words.find(w=>w.word===exEditorWord);
+  if (target) {
+    const examples=[];
+    for(let i=0;i<3;i++){
+      const en=(document.getElementById('ex-en-'+i)?.value||'').trim();
+      const zh=(document.getElementById('ex-zh-'+i)?.value||'').trim();
+      if(en) examples.push({en,zh});
+    }
+    if(examples.length){
+      target.examples=examples;
+      target.example=examples[0].en;
+      target.exampleZh=examples[0].zh;
+    }
+    saveWords(words);
+  }
+  closeExEditor(); renderBank();
 }
 
 function confirmDeleteWord(word) {
@@ -2579,15 +2656,25 @@ function genExampleFallback(word) {
 }
 function updateExampleDrawer() {
   const w=studyWords[studyIdx]; if(!w) return;
-  const exEn=w.example||genExampleFallback(w.word);
-  const exZh=w.exampleZh||'（試著把這個單字用在句子裡！）';
+  const list=document.getElementById('ex-list'); if(!list) return;
   const re=new RegExp(`\\b(${w.word.replace(/[.*+?^${}()|[\]\\]/g,'\\$&')})\\b`,'gi');
-  document.getElementById('ex-en').innerHTML=escHtml(exEn).replace(re,'<strong>$1</strong>');
-  document.getElementById('ex-zh').textContent=exZh;
+  let pairs;
+  if(Array.isArray(w.examples)&&w.examples.length){
+    pairs=w.examples;
+  } else {
+    pairs=[{en:w.example||genExampleFallback(w.word),zh:w.exampleZh||''}];
+  }
+  list.innerHTML=pairs.map((p,i)=>{
+    const enH=escHtml(p.en||'').replace(re,'<strong>$1</strong>');
+    const zhH=escHtml(p.zh||'');
+    const sep=i<pairs.length-1?'border-bottom:1px solid rgba(0,0,0,.08);padding-bottom:10px;margin-bottom:10px;':'';
+    return `<div style="${sep}"><div class="ex-en">${enH}</div>${zhH?`<div class="ex-zh">${zhH}</div>`:''}</div>`;
+  }).join('');
 }
 function speakExample() {
   const w=studyWords[studyIdx]; if(!w) return;
-  speakFallback(w.example||genExampleFallback(w.word),1.0);
+  const firstEn=(Array.isArray(w.examples)&&w.examples[0]?.en)||w.example||genExampleFallback(w.word);
+  speakFallback(firstEn,1.0);
 }
 
 // ══════════════════════════════════════════════════════
