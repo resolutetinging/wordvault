@@ -424,6 +424,11 @@
       font-size: 18px; color: rgba(255,255,255,0.82);
       margin-top: 10px; font-weight: 500;
     }
+    .fc-english-def {
+      font-size: 13.5px; font-style: italic; color: rgba(255,255,255,0.82);
+      text-align: center; line-height: 1.5; max-width: 240px;
+      margin-bottom: 8px; font-weight: 500;
+    }
     .fc-chinese {
       font-size: 34px; font-weight: 800; color: white;
       text-align: center; text-shadow: 0 2px 10px rgba(0,0,0,0.15);
@@ -702,9 +707,9 @@
 
         <!-- 背面：中文 -->
         <div class="flip-card-face flip-card-back">
-          <div class="fc-face-label">中文意思</div>
           <img class="fc-card-img" id="fc-back-img" src="" alt="" style="display:none;" />
           <span id="fc-emoji" style="font-size:44px;line-height:1;margin-bottom:6px;display:none;"></span>
+          <div class="fc-english-def" id="fc-english-def" style="display:none;"></div>
           <div class="fc-chinese" id="fc-chinese">—</div>
           <div class="fc-word-small" id="fc-word-back"></div>
           <div class="fc-pos-badge" id="fc-pos-badge" style="display:none;"></div>
@@ -1636,6 +1641,8 @@ function renderCard() {
   // Back
   const zh = w.chinese ? stripPosPrefix(String(w.chinese),w.pos) : '（尚未翻譯）';
   document.getElementById('fc-chinese').textContent=zh;
+  const defEl=document.getElementById('fc-english-def');
+  if(defEl){if(w.englishDef){defEl.textContent=w.englishDef;defEl.style.display='block';}else defEl.style.display='none';}
   document.getElementById('fc-word-back').textContent=w.word;
   const posBadge=document.getElementById('fc-pos-badge');
   if (w.pos) { posBadge.textContent=w.pos; posBadge.style.display='inline-block'; }
@@ -2112,7 +2119,6 @@ function submitMath() {
   if (isNaN(val)) { st.style.color='var(--red)'; st.textContent='請輸入數字答案'; return; }
   if (val===mathAnswer) {
     st.style.color='var(--green-dk)'; st.textContent='✓ 答對了！解鎖中…';
-    if (mathPendingNav) mathUnlocked.add(mathPendingNav.name);
     setTimeout(()=>{
       document.getElementById('math-lock-overlay').classList.remove('show');
       if (mathPendingNav) {
