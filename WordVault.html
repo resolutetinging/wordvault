@@ -1296,8 +1296,9 @@ async function batchTranslate() {
         w.chinese ? `${w.word} [已有中文：${w.chinese}]` : w.word
       ).join('\n');
 
+      // ⚠️ 禁止簡體中文：所有 chinese 欄位必須使用繁體中文（台灣），Llama 若吐出簡體會被 prompt 明確拒絕
       const systemPrompt = chunkNeedFull.length
-        ? '你是英文字典助理。輸入是以換行分隔的英文單字或片語，每行一個。規則：(1) 回傳一個 JSON 物件，每一行輸入對應一個 key-value，不得合併多行為一個 key。(2) key 必須與該行輸入逐字相同，包含拼寫錯誤，絕對不得修正錯字或改變任何字元，不含方括號內容。(3) value 是包含三個欄位的物件：chinese（繁體中文解釋，格式如 "n. 韌性；彈性"）、pos（詞性縮寫，如 n./v./adj./adv./phrase）、pronunciation（美式 IPA）。(4) 若某行為片段或難以翻譯，仍須回傳，chinese 填入最接近的解釋。(5) 只輸出 JSON，不要其他文字。'
+        ? '你是英文字典助理。【語言規定】所有中文輸出必須使用繁體中文（台灣），絕對禁止使用簡體中文，違者視為錯誤。輸入是以換行分隔的英文單字或片語，每行一個。規則：(1) 回傳一個 JSON 物件，每一行輸入對應一個 key-value，不得合併多行為一個 key。(2) key 必須與該行輸入逐字相同，包含拼寫錯誤，絕對不得修正錯字或改變任何字元，不含方括號內容。(3) value 是包含三個欄位的物件：chinese（繁體中文解釋，格式如 "n. 韌性；彈性"）、pos（詞性縮寫，如 n./v./adj./adv./phrase）、pronunciation（美式 IPA）。(4) 若某行為片段或難以翻譯，仍須回傳，chinese 填入最接近的解釋。(5) 只輸出 JSON，不要其他文字。'
         : '你是英文字典助理。輸入是以換行分隔的英文單字或片語（方括號內是已有的中文供參考），只需補充 pos 和 pronunciation。規則：(1) 每一行對應一個 key-value，不得合併多行。(2) key 必須與該行輸入逐字相同，包含拼寫錯誤，絕對不得修正錯字，不含方括號內容。(3) value 包含 pos（詞性縮寫）和 pronunciation（美式 IPA）兩個欄位。(4) 只輸出 JSON，不要其他文字。';
 
       const resp = await groqFetch({
@@ -1394,7 +1395,7 @@ async function batchTranslate() {
           max_tokens: 600,
           response_format: { type: 'json_object' },
           messages: [
-            { role: 'system', content: '你是英文字典助理。以下每行是一個英文單字，你必須全部回傳，不得跳過任何一個。JSON 格式：每個 key 是原輸入單字（不改拼寫、不改大小寫），value 包含 chinese（繁體中文含詞性前綴，如 "n. 唾液"）、pos（n./v./adj./adv./phrase）、pronunciation（美式 IPA）。只輸出 JSON，不要其他文字。' },
+            { role: 'system', content: '你是英文字典助理。【語言規定】所有中文輸出必須使用繁體中文（台灣），絕對禁止使用簡體中文。以下每行是一個英文單字，你必須全部回傳，不得跳過任何一個。JSON 格式：每個 key 是原輸入單字（不改拼寫、不改大小寫），value 包含 chinese（繁體中文含詞性前綴，如 "n. 唾液"）、pos（n./v./adj./adv./phrase）、pronunciation（美式 IPA）。只輸出 JSON，不要其他文字。' },
             { role: 'user', content: stillMissing.map(w => w.word).join('\n') }
           ]
         });
@@ -1430,7 +1431,7 @@ async function batchTranslate() {
               max_tokens: 120,
               response_format: { type: 'json_object' },
               messages: [
-                { role: 'system', content: '你是英文字典助理。輸入是一個英文單字，回傳 JSON，key 為該單字，value 包含 chinese（繁體中文含詞性前綴，如 "n. 唾液"）、pos（n./v./adj./adv./phrase）、pronunciation（美式 IPA）。只輸出 JSON。' },
+                { role: 'system', content: '你是英文字典助理。【語言規定】所有中文輸出必須使用繁體中文（台灣），絕對禁止使用簡體中文。輸入是一個英文單字，回傳 JSON，key 為該單字，value 包含 chinese（繁體中文含詞性前綴，如 "n. 唾液"）、pos（n./v./adj./adv./phrase）、pronunciation（美式 IPA）。只輸出 JSON。' },
                 { role: 'user', content: fw.word }
               ]
             });
