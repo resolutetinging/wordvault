@@ -1658,6 +1658,21 @@ function renderStudyList() {
     studyWords.length >= 4 ? 'block' : 'none';
 }
 
+function toggleBankStar(btn) {
+  const word = btn.dataset.word;
+  const all = loadWords();
+  const target = all.find(w => w.word === word) || all.find(w => w.word.toLowerCase() === word.toLowerCase());
+  if (!target) return;
+  target.starred = !target.starred;
+  const starred = target.starred;
+  saveWords(all);
+  btn.textContent = starred ? '★' : '☆';
+  btn.className = 'star-btn' + (starred ? ' on' : '');
+  btn.title = starred ? '取消標記' : '標記重點';
+  const sw = studyWords.find(w => w.word.toLowerCase() === word.toLowerCase());
+  if (sw) sw.starred = starred;
+}
+
 function toggleStudyStar(word, idx) {
   const all = loadWords();
   const target = all.find(w => w.word.toLowerCase() === word.toLowerCase());
@@ -2275,7 +2290,8 @@ function renderBank() {
       try {
         return wordCardHTML(w, {
           showError: true,
-          actions: `<button class="btn-icon" onclick="speak('${escJs(w.word)}','${escJs(w.audioUrl||'')}')" title="朗讀">🔊</button>
+          actions: `<button class="star-btn${w.starred?' on':''}" data-word="${escHtml(w.word)}" onclick="toggleBankStar(this)" title="${w.starred?'取消標記':'標記重點'}">${w.starred?'★':'☆'}</button>
+                    <button class="btn-icon" onclick="speak('${escJs(w.word)}','${escJs(w.audioUrl||'')}')" title="朗讀">🔊</button>
                     <button class="btn-icon" onclick="openEnEditor('${escJs(w.word)}')" title="編輯英文">Aa</button>
                     <button class="btn-icon" onclick="openZhEditor('${escJs(w.word)}')" title="編輯中文">✏️</button>
                     <button class="btn-icon" onclick="openTagEditor('${escJs(w.word)}')" title="編輯標籤">🏷</button>
