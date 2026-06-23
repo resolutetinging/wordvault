@@ -1737,9 +1737,15 @@ async function fetchDictData(word) {
     if (!Array.isArray(data) || !data[0]) return null;
     const entry = data[0];
     const phonetics = entry.phonetics || [];
-    // prefer entry with both text and audio
-    const best = phonetics.find(p => p.text && p.audio) || phonetics.find(p => p.text) || phonetics[0] || {};
-    return { pronunciation: best.text || '', audioUrl: best.audio || '' };
+    // 音訊：優先選 URL 含 -us 的美式發音
+    const audioEntry = phonetics.find(p => p.audio && p.audio.includes('-us.'))
+      || phonetics.find(p => p.audio);
+    // 文字：優先選與音訊同 entry（確保 IPA 與音訊一致），否則找任何有文字的
+    const textEntry = phonetics.find(p => p.text && p.audio && p.audio === audioEntry?.audio)
+      || phonetics.find(p => p.text && p.audio)
+      || phonetics.find(p => p.text)
+      || phonetics[0] || {};
+    return { pronunciation: textEntry.text || '', audioUrl: audioEntry?.audio || '' };
   } catch {
     return null;
   }
