@@ -1755,18 +1755,18 @@ function _cacheAudioUrl(word, url) {
 
 function speakFallback(word) { _startSynthesis(word); }
 
-async function fetchDictData(word) {
+async function fetchDictData(word, ms = 5000) {
+  const ctrl = new AbortController();
+  const tid = setTimeout(() => ctrl.abort(), ms);
   try {
-    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`, { signal: AbortSignal.timeout(4000) });
+    const res = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(word)}`, { signal: ctrl.signal });
     if (!res.ok) return null;
     const data = await res.json();
     if (!Array.isArray(data) || !data[0]) return null;
     const entry = data[0];
     const phonetics = entry.phonetics || [];
-    // 音訊：優先選 URL 含 -us 的美式發音
     const audioEntry = phonetics.find(p => p.audio && p.audio.includes('-us.'))
       || phonetics.find(p => p.audio);
-    // 文字：優先選與音訊同 entry（確保 IPA 與音訊一致），否則找任何有文字的
     const textEntry = phonetics.find(p => p.text && p.audio && p.audio === audioEntry?.audio)
       || phonetics.find(p => p.text && p.audio)
       || phonetics.find(p => p.text)
@@ -1774,8 +1774,12 @@ async function fetchDictData(word) {
     return { pronunciation: textEntry.text || '', audioUrl: audioEntry?.audio || '' };
   } catch {
     return null;
+  } finally {
+    clearTimeout(tid);
   }
 }
+
+let _phoneticsStop = false;
 
 async function enrichWithDictPhonetics(words) {
   const all = loadWords();
@@ -1791,23 +1795,28 @@ async function enrichWithDictPhonetics(words) {
 }
 
 async function refreshAllPhonetics() {
+  _phoneticsStop = false;
   const words = loadWords();
-  showStatus('phonetics-refresh-status', '⏳ 正在查詢字典音標，請稍候…', 'info');
+  const total = words.length;
+  showStatus('phonetics-refresh-status', `⏳ 查詢中… 0 / ${total} <button onclick="_phoneticsStop=true" style="margin-left:8px;font-size:11px;padding:1px 7px;border:1px solid #c0a8a0;border-radius:5px;background:none;cursor:pointer;color:#8a5048;">停止</button>`, 'info', true);
   let updated = 0;
-  for (let i = 0; i < words.length; i++) {
-    const w = words[i];
-    const result = await fetchDictData(w.word);
+  for (let i = 0; i < total; i++) {
+    if (_phoneticsStop) break;
+    const result = await fetchDictData(words[i].word);
     if (result) {
-      if (result.pronunciation) { w.pronunciation = result.pronunciation; updated++; }
-      if (result.audioUrl) w.audioUrl = result.audioUrl;
+      if (result.pronunciation) { words[i].pronunciation = result.pronunciation; updated++; }
+      if (result.audioUrl) words[i].audioUrl = result.audioUrl;
     }
-    if ((i + 1) % 10 === 0) {
-      showStatus('phonetics-refresh-status', `⏳ 已處理 ${i + 1} / ${words.length}…`, 'info');
-      await new Promise(r => setTimeout(r, 500));
+    if ((i + 1) % 5 === 0 || i === total - 1) {
+      showStatus('phonetics-refresh-status', `⏳ 已處理 ${i + 1} / ${total}… <button onclick="_phoneticsStop=true" style="margin-left:8px;font-size:11px;padding:1px 7px;border:1px solid #c0a8a0;border-radius:5px;background:none;cursor:pointer;color:#8a5048;">停止</button>`, 'info', true);
+      await new Promise(r => setTimeout(r, 200));
     }
   }
   saveWords(words);
-  showStatus('phonetics-refresh-status', `✅ 完成：更新 ${updated} 個單字的音標`, 'success');
+  const msg = _phoneticsStop
+    ? `⏹ 已停止（已更新 ${updated} 個音標）`
+    : `✅ 完成：更新 ${updated} 個單字的音標`;
+  showStatus('phonetics-refresh-status', msg, _phoneticsStop ? 'info' : 'success');
   renderBank();
 }
 
@@ -2480,11 +2489,11 @@ function autoTagByPos(w) {
   if (!parts.includes('phrase')) w.resource = [...parts, 'phrase'].join(',');
 }
 
-function showStatus(id, msg, type) {
+function showStatus(id, msg, type, raw = false) {
   const el = document.getElementById(id);
   if (!el) return;
   el.className = 'status-msg status-' + type;
-  el.textContent = msg;
+  if (raw) el.innerHTML = msg; else el.textContent = msg;
 }
 
 function escHtml(str) {
