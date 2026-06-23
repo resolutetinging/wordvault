@@ -189,9 +189,9 @@
       color: var(--ink2);
     }
     .btn-icon:hover { background: var(--gold-light); border-color: var(--gold); }
-    .star-btn{background:none;border:none;font-size:16px;cursor:pointer;padding:4px 5px;border-radius:4px;flex-shrink:0;line-height:1.2;color:#b89a50;opacity:.45;transition:opacity .15s;}
-    .star-btn.on{opacity:.9;}
-    .star-btn:hover{opacity:.7;}
+    .star-btn{background:none;border:none;font-size:16px;cursor:pointer;padding:4px 5px;border-radius:4px;flex-shrink:0;line-height:1.2;color:#a09080;opacity:.55;transition:opacity .15s,color .15s;}
+    .star-btn.on{color:#b07020;opacity:1;}
+    .star-btn:hover{opacity:.8;}
 
     .word-card-actions {
       display: flex;
@@ -737,20 +737,22 @@
     </div>
 
     <!-- Card 3: 資料修正 -->
-    <div class="card" id="data-fix-card">
-      <div class="section-title" onclick="toggleDataFixCard()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;margin-bottom:0;">
-        <span>🔧 資料修正</span>
-        <span id="data-fix-chevron" style="font-size:11px;color:var(--ink2);transition:transform .2s;">▼</span>
+    <div class="card" style="padding:14px 18px;">
+      <div class="coll-hd" onclick="toggleCard('data-fix-body','data-fix-arrow')">
+        <div class="section-title" style="margin-bottom:0;">🔧 資料修正</div>
+        <span class="coll-arrow" id="data-fix-arrow">▾</span>
       </div>
-      <div id="data-fix-body" style="display:none;margin-top:4px;">
-        <button class="btn btn-outline btn-sm" onclick="runCaseFix()" style="width:100%;">
-          修正單字首字母大寫（執行一次即可）
-        </button>
-        <div id="case-fix-status" style="margin-top:6px;"></div>
-        <button class="btn btn-outline btn-sm" onclick="refreshAllPhonetics()" style="width:100%;margin-top:8px;">
-          🔄 重新查詢所有單字音標（Free Dictionary API）
-        </button>
-        <div id="phonetics-refresh-status" style="margin-top:6px;"></div>
+      <div class="coll-body collapsed" id="data-fix-body">
+        <div style="padding-top:12px;">
+          <button class="btn btn-outline btn-sm" onclick="runCaseFix()" style="width:100%;">
+            修正單字首字母大寫（執行一次即可）
+          </button>
+          <div id="case-fix-status" style="margin-top:6px;"></div>
+          <button class="btn btn-outline btn-sm" onclick="refreshAllPhonetics()" style="width:100%;margin-top:8px;">
+            🔄 重新查詢所有單字音標（Free Dictionary API）
+          </button>
+          <div id="phonetics-refresh-status" style="margin-top:6px;"></div>
+        </div>
       </div>
     </div>
 
@@ -1807,7 +1809,7 @@ async function refreshAllPhonetics() {
       if (result.pronunciation) { words[i].pronunciation = result.pronunciation; updated++; }
       if (result.audioUrl) words[i].audioUrl = result.audioUrl;
     }
-    if ((i + 1) % 5 === 0 || i === total - 1) {
+    if ((i + 1) % 5 === 0) {
       showStatus('phonetics-refresh-status', `⏳ 已處理 ${i + 1} / ${total}… <button onclick="_phoneticsStop=true" style="margin-left:8px;font-size:11px;padding:1px 7px;border:1px solid #c0a8a0;border-radius:5px;background:none;cursor:pointer;color:#8a5048;">停止</button>`, 'info', true);
       await new Promise(r => setTimeout(r, 200));
     }
@@ -2710,14 +2712,6 @@ async function pasteFromClipboard() {
   }
 }
 
-function toggleDataFixCard() {
-  const body = document.getElementById('data-fix-body');
-  const chevron = document.getElementById('data-fix-chevron');
-  const open = body.style.display === 'none';
-  body.style.display = open ? 'block' : 'none';
-  chevron.style.transform = open ? 'rotate(180deg)' : '';
-}
-
 function runCaseFix() {
   try {
     const words = loadWords();
@@ -3044,7 +3038,7 @@ function toggleCard(bodyId,arrowId){
   localStorage.setItem('wv_coll_'+bodyId,col?'1':'0');
 }
 (function initCardCollapse(){
-  ['backup-body','sync-body'].forEach(id=>{
+  ['backup-body','sync-body','data-fix-body'].forEach(id=>{
     if(localStorage.getItem('wv_coll_'+id)==='1'){
       const b=document.getElementById(id);
       const a=document.getElementById(id.replace('-body','-arrow'));
