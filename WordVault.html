@@ -189,6 +189,9 @@
       color: var(--ink2);
     }
     .btn-icon:hover { background: var(--gold-light); border-color: var(--gold); }
+    .star-btn{background:none;border:none;font-size:16px;cursor:pointer;padding:2px 3px;border-radius:4px;flex-shrink:0;line-height:1.2;opacity:.25;transition:opacity .15s;}
+    .star-btn.on{opacity:1;}
+    .star-btn:hover{opacity:.7;}
 
     .word-card-actions {
       display: flex;
@@ -1639,12 +1642,30 @@ function renderStudyList() {
       index: i,
       showZh,
       showError: true,
-      actions: `<button class="btn-icon" onclick="speak('${escJs(w.word)}','${escJs(w.audioUrl||'')}')" title="朗讀">🔊</button>`
+      actions: `<button class="star-btn${w.starred?' on':''}" id="wv-star-${i}" onclick="toggleStudyStar('${escJs(w.word)}',${i})" title="${w.starred?'取消標記':'標記重點'}">${w.starred?'⭐':'☆'}</button>
+               <button class="btn-icon" onclick="speak('${escJs(w.word)}','${escJs(w.audioUrl||'')}')" title="朗讀">🔊</button>`
     })
   ).join('');
 
   document.getElementById('study-quiz-btn-row').style.display =
     studyWords.length >= 4 ? 'block' : 'none';
+}
+
+function toggleStudyStar(word, idx) {
+  const all = loadWords();
+  const target = all.find(w => w.word.toLowerCase() === word.toLowerCase());
+  if (!target) return;
+  target.starred = !target.starred;
+  const starred = target.starred;
+  saveWords(all);
+  const sw = studyWords.find(w => w.word.toLowerCase() === word.toLowerCase());
+  if (sw) sw.starred = starred;
+  const btn = document.getElementById(`wv-star-${idx}`);
+  if (btn) {
+    btn.textContent = starred ? '⭐' : '☆';
+    btn.className = 'star-btn' + (starred ? ' on' : '');
+    btn.title = starred ? '取消標記' : '標記重點';
+  }
 }
 
 function speak(word, audioUrl) {
