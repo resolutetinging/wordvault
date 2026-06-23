@@ -737,16 +737,21 @@
     </div>
 
     <!-- Card 3: 資料修正 -->
-    <div class="card">
-      <div class="section-title">🔧 資料修正</div>
-      <button class="btn btn-outline btn-sm" onclick="runCaseFix()" style="width:100%;">
-        修正單字首字母大寫（執行一次即可）
-      </button>
-      <div id="case-fix-status" style="margin-top:6px;"></div>
-      <button class="btn btn-outline btn-sm" onclick="refreshAllPhonetics()" style="width:100%;margin-top:8px;">
-        🔄 重新查詢所有單字音標（Free Dictionary API）
-      </button>
-      <div id="phonetics-refresh-status" style="margin-top:6px;"></div>
+    <div class="card" id="data-fix-card">
+      <div class="section-title" onclick="toggleDataFixCard()" style="cursor:pointer;display:flex;align-items:center;justify-content:space-between;user-select:none;">
+        <span>🔧 資料修正</span>
+        <span id="data-fix-chevron" style="font-size:11px;color:var(--ink2);transition:transform .2s;">▼</span>
+      </div>
+      <div id="data-fix-body" style="display:none;margin-top:4px;">
+        <button class="btn btn-outline btn-sm" onclick="runCaseFix()" style="width:100%;">
+          修正單字首字母大寫（執行一次即可）
+        </button>
+        <div id="case-fix-status" style="margin-top:6px;"></div>
+        <button class="btn btn-outline btn-sm" onclick="refreshAllPhonetics()" style="width:100%;margin-top:8px;">
+          🔄 重新查詢所有單字音標（Free Dictionary API）
+        </button>
+        <div id="phonetics-refresh-status" style="margin-top:6px;"></div>
+      </div>
     </div>
 
   </section>
@@ -2694,6 +2699,14 @@ async function pasteFromClipboard() {
   } catch {
     showStatus('clipboard-status', '❌ 無法讀取剪貼簿，請直接貼到「還原備份」的檔案輸入', 'error');
   }
+}
+
+function toggleDataFixCard() {
+  const body = document.getElementById('data-fix-body');
+  const chevron = document.getElementById('data-fix-chevron');
+  const open = body.style.display === 'none';
+  body.style.display = open ? 'block' : 'none';
+  chevron.style.transform = open ? 'rotate(180deg)' : '';
 }
 
 function runCaseFix() {
