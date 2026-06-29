@@ -1692,31 +1692,28 @@ function toggleStudyStar(word, idx) {
 
 function speak(word, audioUrl) {
   if (audioUrl) {
-    // 有快取 URL：直接播放，不啟動 synthesis（避免兩聲重疊/遠遠的效果）
     const a = new Audio(audioUrl);
     a.volume = 1;
     a.play().catch(() => {
-      // 快取 URL 失效：synthesis 保底 + 重新 fetch
-      _startSynthesis(word);
+      // 快取 URL 失效：重新 fetch，fetch 全部失敗才 synthesis
       _fetchAndPlayAudio(word);
     });
     return;
   }
-  // 無快取：synthesis 同步保底（iOS user gesture 要求）+ 非同步抓真正音訊
-  _startSynthesis(word);
+  // 無快取：fetch 真正音訊；只有全部管道失敗才 synthesis 保底（避免兩聲）
   _fetchAndPlayAudio(word);
 }
 
 async function _fetchAndPlayAudio(word) {
   const w = word.toLowerCase();
-  // 1. dict API（有完整 phonetics，可能指向外部 CDN）
+  // 1. dict API
   const data = await fetchDictData(word).catch(() => null);
   if (data?.audioUrl) {
     _cacheAudioUrl(word, data.audioUrl);
     _playAudioUrl(data.audioUrl);
     return;
   }
-  // 2. 直接 race 多個靜態 CDN（不需額外 API 呼叫）
+  // 2. race 多個靜態 CDN
   const winner = await Promise.any([
     _tryAudioLoad(`https://api.dictionaryapi.dev/media/pronunciations/en/${w}-us.mp3`),
     _tryAudioLoad(`https://ssl.gstatic.com/dictionary/static/sounds/oxford/${w}--_us_1.mp3`),
@@ -1724,11 +1721,12 @@ async function _fetchAndPlayAudio(word) {
   ]).catch(() => null);
   if (winner) {
     _cacheAudioUrl(word, winner.url);
-    try { window.speechSynthesis.cancel(); } catch(e) {}
     winner.a.volume = 1;
     winner.a.play().catch(() => {});
+    return;
   }
-  // 若全部 fail → synthesis 繼續執行
+  // 3. 所有管道失敗 → synthesis 最後保底
+  _startSynthesis(word);
 }
 
 // 預先載入音訊，成功則 resolve {a, url}，失敗則 reject
