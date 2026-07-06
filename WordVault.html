@@ -2537,7 +2537,7 @@ const GIST_TOKEN_KEY = 'wordvault_gist_token';
 const GIST_ID_KEY    = 'wordvault_gist_id';
 const GIST_FILENAME  = 'wordvault_sync.json';
 
-function getGistToken() { return localStorage.getItem(GIST_TOKEN_KEY) || ''; }
+function getGistToken() { return localStorage.getItem('gh_pat') || localStorage.getItem(GIST_TOKEN_KEY) || ''; }
 function getGistId()    { return localStorage.getItem(GIST_ID_KEY) || ''; }
 
 function saveGistToken() {
