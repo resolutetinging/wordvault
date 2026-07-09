@@ -1388,8 +1388,8 @@ async function batchTranslate() {
       const wStr  = chunk.map(w=>w.chinese?`${w.word} [中文：${w.chinese}]`:w.word).join('\n');
       const hasFull = chunk.some(w=>!w.chinese);
       const sys = hasFull
-        ? 'You are a dictionary API. Return ONLY a flat JSON object where each key is exactly the English word as provided, and each value is {chinese, pos, pronunciation, emoji, englishDef, examples}. chinese is the Traditional Chinese translation with NO part-of-speech prefix (e.g. "蘋果" not "n.蘋果"). pos is the POS abbreviation (e.g. "n"). pronunciation is KK phonetic notation. emoji is a single representative emoji. englishDef is a concise English definition. examples is an array of exactly 3 objects each with {en, zh} where en is an example sentence and zh is its Traditional Chinese translation. Do NOT wrap in any container key. Example: {"apple":{"chinese":"蘋果","pos":"n","pronunciation":"/ˈæpəl/","emoji":"🍎","englishDef":"a round fruit with red or green skin","examples":[{"en":"I eat an apple every day.","zh":"我每天吃一顆蘋果。"},{"en":"She gave me a red apple.","zh":"她給了我一顆紅蘋果。"},{"en":"An apple a day keeps the doctor away.","zh":"每天一顆蘋果，醫生遠離我。"}]}}'
-        : 'You are a dictionary API. Return ONLY a flat JSON object where each key is exactly the English word (no brackets), and each value is {pos, pronunciation, emoji, englishDef, examples}. englishDef is a concise English definition. examples is an array of exactly 3 {en, zh} objects where en is an example sentence and zh is its Traditional Chinese translation. emoji must be a single representative emoji. Do NOT wrap in any container key.';
+        ? 'You are a dictionary API. Return ONLY a flat JSON object where each key is exactly the English word as provided, and each value is {chinese, pos, pronunciation, emoji, englishDef, examples}. chinese is the Traditional Chinese (Taiwan standard) translation with NO part-of-speech prefix (e.g. "蘋果" not "n.蘋果"). All zh/chinese fields must never use Simplified Chinese characters or Japanese (including kanji shinjitai forms and kana). pos is the POS abbreviation (e.g. "n"). pronunciation is KK phonetic notation. emoji is a single representative emoji. englishDef is a concise English definition. examples is an array of exactly 3 objects each with {en, zh} where en is an example sentence and zh is its Traditional Chinese translation. Do NOT wrap in any container key. Example: {"apple":{"chinese":"蘋果","pos":"n","pronunciation":"/ˈæpəl/","emoji":"🍎","englishDef":"a round fruit with red or green skin","examples":[{"en":"I eat an apple every day.","zh":"我每天吃一顆蘋果。"},{"en":"She gave me a red apple.","zh":"她給了我一顆紅蘋果。"},{"en":"An apple a day keeps the doctor away.","zh":"每天一顆蘋果，醫生遠離我。"}]}}'
+        : 'You are a dictionary API. Return ONLY a flat JSON object where each key is exactly the English word (no brackets), and each value is {pos, pronunciation, emoji, englishDef, examples}. englishDef is a concise English definition. examples is an array of exactly 3 {en, zh} objects where en is an example sentence and zh is its Traditional Chinese (Taiwan standard) translation — never Simplified Chinese, never Japanese. emoji must be a single representative emoji. Do NOT wrap in any container key.';
 
       const resp = await groqFetch({
         model:'llama-3.3-70b-versatile', temperature:0.1, max_tokens:2000,
@@ -1423,6 +1423,9 @@ async function batchTranslate() {
       for (const [k, v] of Object.entries(t)) {
         if (typeof v === 'string') t[k] = { chinese: v, pos: '', pronunciation: '' };
       }
+
+      // 繁中保底：cc_zht.js 為外部非同步載入的共用檔，未就緒時原樣使用不報錯
+      if (typeof s2tDeep === 'function') t = s2tDeep(t);
 
       const nm=new Map(Object.entries(t).map(([k,v])=>[norm(k),v]));
       const findT=w=>t[w]||t[w.toLowerCase()]||nm.get(norm(w))||null;
@@ -2502,6 +2505,7 @@ async function saveNewKid() {
 async function genKidStickerPool(kidId, target) {
   const apiKey = getApiKey(); if(!apiKey) return null;
   const prompt = `小朋友的集點目標是「${target}」。請根據這個目標，生成 12 個可愛的虛擬集點貼紙，讓孩子解鎖貼紙時感覺跟目標愈來愈近。每個貼紙要有主題感，與目標相關或能讓孩子開心。
+label 欄位務必使用繁體中文（台灣正體），嚴禁簡體字，嚴禁日文（含漢字新字體與假名）。
 輸出純 JSON 陣列（直接從 [ 開始，不加 markdown）：
 [{"id":"英文唯一id","emoji":"一個emoji","label":"4字以內中文"}]`;
   try {
@@ -2515,7 +2519,9 @@ async function genKidStickerPool(kidId, target) {
     const raw=(j.choices?.[0]?.message?.content||'').trim();
     const m=raw.match(/\[[\s\S]*\]/);
     if(!m) throw new Error('no array');
-    const pool=JSON.parse(m[0]);
+    const parsedPool=JSON.parse(m[0]);
+    // 繁中保底：cc_zht.js 為外部非同步載入的共用檔，未就緒時原樣使用不報錯
+    const pool=(typeof s2tDeep==='function')?s2tDeep(parsedPool):parsedPool;
     if(!Array.isArray(pool)||!pool.length) throw new Error('empty');
     // Save to kid profile
     const profiles=loadProfiles();
@@ -2866,7 +2872,7 @@ async function genGroqAdvice(profiles,allWords) {
   const errList=topErr.map(w=>`${w.word}（錯${w.errorCount}次）`).join('、');
   const neverWrong=allWords.filter(w=>!w.errorCount).length;
   const chronic=allWords.filter(w=>w.errorCount>=3).length;
-  const prompt=`你是一位溫暖的兒童英文學習顧問。以下是小學生的英文學習數據：\n- 總單字量 ${allWords.length} 個，從未出錯 ${neverWrong} 個，慣性失誤 ${chronic} 個\n- 高頻錯誤：${errList||'目前無記錄'}\n- 共 ${profiles.length} 位孩子\n\n請用繁體中文給家長 3 條溫暖實用的親職建議，幫助孩子改善英文學習。語氣輕鬆，每條 ≤ 30 字，直接輸出條列，無需標題。`;
+  const prompt=`你是一位溫暖的兒童英文學習顧問。以下是小學生的英文學習數據：\n- 總單字量 ${allWords.length} 個，從未出錯 ${neverWrong} 個，慣性失誤 ${chronic} 個\n- 高頻錯誤：${errList||'目前無記錄'}\n- 共 ${profiles.length} 位孩子\n\n請務必使用繁體中文（台灣正體）給家長 3 條溫暖實用的親職建議，嚴禁簡體字，嚴禁日文（含漢字新字體與假名），幫助孩子改善英文學習。語氣輕鬆，每條 ≤ 30 字，直接輸出條列，無需標題。`;
   try{
     const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
       method:'POST',
@@ -2875,7 +2881,9 @@ async function genGroqAdvice(profiles,allWords) {
     });
     if(!r.ok) throw new Error('');
     const j=await r.json();
-    const advice=j.choices?.[0]?.message?.content||'';
+    const rawAdvice=j.choices?.[0]?.message?.content||'';
+    // 繁中保底：cc_zht.js 為外部非同步載入的共用檔，未就緒時原樣使用不報錯
+    const advice=(typeof s2t==='function')?s2t(rawAdvice):rawAdvice;
     document.getElementById('groq-advice-area').innerHTML=`<div class="groq-advice">💌 <strong>AI 親職建議</strong><br><br>${escHtml(advice).replace(/\n/g,'<br>')}</div>`;
   }catch{
     document.getElementById('groq-advice-area').innerHTML='<div class="groq-advice">💡 請確認 Groq API Key 已設定，即可獲得個人化學習建議。</div>';
@@ -2908,5 +2916,6 @@ initKidSelector();
   // bank：不自動恢復，需要數學鎖
 })();
 </script>
+<script src="https://resolutetinging.github.io/control-center/cc_zht.js"></script>
 </body>
 </html>

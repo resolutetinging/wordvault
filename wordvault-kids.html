@@ -1108,7 +1108,7 @@ async function batchTranslate() {
       const wStr  = chunk.map(w=>w.chinese?`${w.word} [中文：${w.chinese}]`:w.word).join('\n');
       const hasFull = chunk.some(w=>!w.chinese);
       const sys = hasFull
-        ? 'You are a dictionary API. Return ONLY a flat JSON object where each key is exactly the English word as provided, and each value is {chinese, pos, pronunciation}. chinese must be Traditional Chinese with POS prefix (e.g. "n.蘋果"). Do NOT wrap in any container key. Example: {"apple":{"chinese":"n.蘋果","pos":"n","pronunciation":"/ˈæpəl/"}}'
+        ? 'You are a dictionary API. Return ONLY a flat JSON object where each key is exactly the English word as provided, and each value is {chinese, pos, pronunciation}. chinese must be Traditional Chinese (Taiwan standard) with POS prefix (e.g. "n.蘋果"). Never output Simplified Chinese characters. Never output Japanese (including kanji shinjitai forms and kana). Do NOT wrap in any container key. Example: {"apple":{"chinese":"n.蘋果","pos":"n","pronunciation":"/ˈæpəl/"}}'
         : 'You are a dictionary API. Return ONLY a flat JSON object where each key is exactly the English word (no brackets), and each value is {pos, pronunciation}. Do NOT wrap in any container key.';
 
       const resp = await groqFetch({
@@ -1143,6 +1143,9 @@ async function batchTranslate() {
       for (const [k, v] of Object.entries(t)) {
         if (typeof v === 'string') t[k] = { chinese: v, pos: '', pronunciation: '' };
       }
+
+      // 繁中保底：cc_zht.js 為外部非同步載入的共用檔，未就緒時原樣使用不報錯
+      if (typeof s2tDeep === 'function') t = s2tDeep(t);
 
       const nm=new Map(Object.entries(t).map(([k,v])=>[norm(k),v]));
       const findT=w=>t[w]||t[w.toLowerCase()]||nm.get(norm(w))||null;
@@ -1979,5 +1982,6 @@ mathUnlocked.add('import');
   // bank：不自動恢復，需要數學鎖
 })();
 </script>
+<script src="https://resolutetinging.github.io/control-center/cc_zht.js"></script>
 </body>
 </html>
