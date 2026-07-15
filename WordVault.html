@@ -565,6 +565,7 @@
     <button class="nav-btn" onclick="showScreen('study', this)">📚 背誦</button>
     <button class="nav-btn" onclick="showScreen('quiz', this)">🎯 考驗</button>
     <button class="nav-btn" onclick="showScreen('bank', this)">🗂 單字庫</button>
+    <button class="nav-btn" onclick="showScreen('starred', this)">⭐ 收藏</button>
   </nav>
 </header>
 
@@ -887,6 +888,10 @@
     <div id="bank-list"></div>
   </section>
 
+  <section class="screen" id="screen-starred">
+    <div id="starred-list"></div>
+  </section>
+
 </main>
 
 <!-- Confirm Dialog -->
@@ -988,6 +993,7 @@ function showScreen(name, btn) {
   }
   if (name === 'quiz') { renderQuizResourceFilter(); renderQuizTagFilter(); }
   if (name === 'study') { renderStudyTagFilter(); renderStudyResourceFilter(); renderStudyList(); }
+  if (name === 'starred') { renderStarred(); }
 }
 
 // ═══════════════════════════════════════════
@@ -2233,6 +2239,7 @@ let bankPage = 0;
 const BANK_PAGE_SIZE = 60;
 
 function renderBank() {
+  try { if (document.getElementById('starred-list')) renderStarred(); } catch(e) {}
   const container = document.getElementById('bank-list');
   if (!container) {
     // bank-list element not found — fatal DOM issue
@@ -2322,6 +2329,78 @@ function bankGoPage(page) {
   bankPage = page;
   renderBank();
   document.getElementById('screen-bank').scrollTop = 0;
+}
+
+// ═══════════════════════════════════════════
+//  STARRED（⭐ 收藏，僅列出 starred===true 單字）
+// ═══════════════════════════════════════════
+let starredPage = 0;
+
+function renderStarred() {
+  const container = document.getElementById('starred-list');
+  if (!container) return;
+  try {
+    const words = loadWords().filter(w => w && w.word && w.starred);
+
+    if (words.length === 0) {
+      container.innerHTML =
+        '<div style="padding:48px 16px;text-align:center;color:#6e6e73;">' +
+        '<div style="font-size:28px;margin-bottom:10px;">⭐</div>' +
+        '<div style="font-size:15px;">尚未標記任何星星單字</div>' +
+        '<div style="font-size:12px;margin-top:6px;">在背誦或單字庫點選 ☆ 即可加入收藏</div>' +
+        '</div>';
+      return;
+    }
+
+    const total = words.length;
+    const pages = Math.ceil(total / BANK_PAGE_SIZE);
+    if (starredPage >= pages) starredPage = Math.max(0, pages - 1);
+    const paged = words.slice(starredPage * BANK_PAGE_SIZE, (starredPage + 1) * BANK_PAGE_SIZE);
+
+    const cards = paged.map(w => {
+      try {
+        return wordCardHTML(w, {
+          showError: true,
+          actions: `<button class="star-btn on" data-word="${escHtml(w.word)}" onclick="toggleStarredTab(this)" title="取消標記">★</button>
+                    <button class="btn-icon" onclick="speak('${escJs(w.word)}','${escJs(w.audioUrl||'')}')" title="朗讀">🔊</button>
+                    <button class="btn-icon" onclick="openEnEditor('${escJs(w.word)}')" title="編輯英文">Aa</button>
+                    <button class="btn-icon" onclick="openZhEditor('${escJs(w.word)}')" title="編輯中文">✏️</button>
+                    <button class="btn-icon" onclick="openTagEditor('${escJs(w.word)}')" title="編輯標籤">🏷</button>
+                    <button class="btn-icon" onclick="confirmDeleteWord('${escJs(w.word)}')" title="刪除">🗑</button>`
+        });
+      } catch { return ''; }
+    }).join('');
+
+    const nav = pages > 1 ? `
+      <div style="display:flex;align-items:center;justify-content:center;gap:10px;padding:14px 0;font-size:13px;color:var(--ink2);">
+        <button class="btn btn-outline btn-sm" onclick="starredGoPage(${starredPage-1})" ${starredPage===0?'disabled':''}>← 上一頁</button>
+        <span>${starredPage+1} / ${pages}（共 ${total}）</span>
+        <button class="btn btn-outline btn-sm" onclick="starredGoPage(${starredPage+1})" ${starredPage>=pages-1?'disabled':''}>下一頁 →</button>
+      </div>` : `<div style="font-size:11px;color:var(--ink2);text-align:center;padding:8px 0;">共 ${total} 個單字</div>`;
+
+    container.innerHTML = cards + nav;
+  } catch(err) {
+    container.innerHTML = `<div class="empty-state">錯誤：${err.message}</div>`;
+  }
+}
+
+function starredGoPage(page) {
+  starredPage = page;
+  renderStarred();
+  document.getElementById('screen-starred').scrollTop = 0;
+}
+
+// 收藏頁的取消標記：整卡即時從清單移除（不像 bank 原地翻牌），故不重用 toggleBankStar
+function toggleStarredTab(btn) {
+  const word = btn.dataset.word;
+  const all = loadWords();
+  const target = all.find(w => w.word === word) || all.find(w => w.word.toLowerCase() === word.toLowerCase());
+  if (!target) return;
+  target.starred = !target.starred;
+  saveWords(all);
+  const sw = studyWords.find(w => w.word.toLowerCase() === word.toLowerCase());
+  if (sw) sw.starred = target.starred;
+  renderStarred();
 }
 
 // ═══════════════════════════════════════════
@@ -3094,7 +3173,7 @@ refreshGistUI();
 // Restore last active tab
 (function restoreLastTab() {
   const last = localStorage.getItem('wordvault_last_tab') || 'import';
-  const valid = ['import', 'study', 'quiz', 'bank'];
+  const valid = ['import', 'study', 'quiz', 'bank', 'starred'];
   const tab = valid.includes(last) ? last : 'import';
   if (tab === 'import') return; // already default
   const btns = document.querySelectorAll('.nav-btn');
