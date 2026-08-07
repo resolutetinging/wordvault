@@ -1730,22 +1730,17 @@ function speak(word, audioUrl) {
 
 async function _fetchAndPlayAudio(word) {
   const w = word.toLowerCase();
-  // 1. dict API——08-06修正：拿到audioUrl不能直接信任就快取播放，字典API的metadata
-  // 可能指向一個實際上已經404/502的檔案，要先驗證真的載入得起來才算數且才快取，
-  // 否則會把一個永久壞掉的網址存進單字資料，之後每次點喇叭都靜默失敗
-  const data = await fetchDictData(word).catch(() => null);
-  if (data?.audioUrl) {
-    const verified = await _tryAudioLoad(data.audioUrl).catch(() => null);
-    if (verified) {
-      _cacheAudioUrl(word, data.audioUrl);
-      verified.a.volume = 1;
-      verified.a.play().catch(() => {});
-      return;
-    }
-    // 字典API給的URL驗證失敗（不快取），往下一層CDN賽跑找備援
-  }
-  // 2. race 多個靜態 CDN
+  // 08-07修正：原本是「先等dict API的音檔驗證完全失敗，才開始CDN賽跑」的循序流程。
+  // dictionaryapi.dev的音檔主機目前明顯不穩（canine/cauldron皆502，非單一字問題），
+  // 循序等待會讓使用者每次都先白等dict失敗一輪才轉備援，延遲感明顯。
+  // 改成dict API的音檔（拿到metadata後）與3個CDN來源，一開始就全部丟進同一組
+  // Promise.any()一起賽跑，誰先驗證成功（canplaythrough）用誰，不用等前一層失敗。
+  const dictCandidate = fetchDictData(word).then(data => {
+    if (!data?.audioUrl) return Promise.reject(new Error('no dict audio'));
+    return _tryAudioLoad(data.audioUrl);
+  });
   const winner = await Promise.any([
+    dictCandidate,
     _tryAudioLoad(`https://api.dictionaryapi.dev/media/pronunciations/en/${w}-us.mp3`),
     _tryAudioLoad(`https://ssl.gstatic.com/dictionary/static/sounds/oxford/${w}--_us_1.mp3`),
     _tryAudioLoad(`https://ssl.gstatic.com/dictionary/static/sounds/20200429/${w}_en_us_1.mp3`),
@@ -3183,9 +3178,16 @@ refreshGistUI();
   let updated = false;
   for (const w of missing) {
     const data = await fetchDictData(w.word).catch(() => null);
+    // 08-07：跟_fetchAndPlayAudio()同一個教訓，背景預抓也不能拿到字典API的audioUrl
+    // 就直接信任快取——字典API的媒體主機不穩時（例如這次canine/cauldron皆502），
+    // 會把一批壞網址預先寫進單字資料，之後每次點喇叭都要先白費一次播放失敗才自癒。
+    // 驗證失敗就不快取，留空讓之後speak()點擊時走完整的CDN賽跑備援。
     if (data?.audioUrl) {
-      _cacheAudioUrl(w.word, data.audioUrl);
-      updated = true;
+      const verified = await _tryAudioLoad(data.audioUrl).catch(() => null);
+      if (verified) {
+        _cacheAudioUrl(w.word, data.audioUrl);
+        updated = true;
+      }
     }
     await new Promise(r => setTimeout(r, 300));
   }
