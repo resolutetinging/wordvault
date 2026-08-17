@@ -1318,7 +1318,7 @@ async function batchTranslate() {
         : '你是英文字典助理。輸入是以換行分隔的英文單字或片語（方括號內是已有的中文供參考），只需補充 pos 和 pronunciation。規則：(1) 每一行對應一個 key-value，不得合併多行。(2) key 必須與該行輸入逐字相同，包含拼寫錯誤，絕對不得修正錯字，不含方括號內容。(3) value 包含 pos（詞性縮寫）和 pronunciation（美式 IPA）兩個欄位。(4) 只輸出 JSON，不要其他文字。';
 
       const resp = await groqFetch({
-        model: 'llama-3.3-70b-versatile',
+        model: 'openai/gpt-oss-120b',
         temperature: 0.1,
         max_tokens: 2000,
         response_format: { type: 'json_object' },
@@ -1409,7 +1409,7 @@ async function batchTranslate() {
       await new Promise(r => setTimeout(r, 800));
       try {
         const retryResp = await groqFetch({
-          model: 'llama-3.3-70b-versatile',
+          model: 'openai/gpt-oss-120b',
           temperature: 0,
           max_tokens: 600,
           response_format: { type: 'json_object' },
@@ -1447,7 +1447,7 @@ async function batchTranslate() {
           showStatus('translate-status', `⏳ 逐字補翻譯 ${fi + 1} / ${finalMissing.length}：${escHtml(fw.word)}…`, 'info');
           try {
             const singleResp = await groqFetch({
-              model: 'llama-3.3-70b-versatile',
+              model: 'openai/gpt-oss-120b',
               temperature: 0,
               max_tokens: 120,
               response_format: { type: 'json_object' },
