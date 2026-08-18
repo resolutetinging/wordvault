@@ -1321,6 +1321,7 @@ async function batchTranslate() {
         model: 'openai/gpt-oss-120b',
         temperature: 0.1,
         max_tokens: 2000,
+        reasoning_format: 'hidden',
         response_format: { type: 'json_object' },
         messages: [{
           role: 'system',
@@ -1412,6 +1413,7 @@ async function batchTranslate() {
           model: 'openai/gpt-oss-120b',
           temperature: 0,
           max_tokens: 600,
+          reasoning_format: 'hidden',
           response_format: { type: 'json_object' },
           messages: [
             { role: 'system', content: '你是英文字典助理。【語言規定】所有中文輸出必須使用繁體中文（台灣），絕對禁止使用簡體中文，嚴禁使用日文（含漢字新字體與假名）。以下每行是一個英文單字，你必須全部回傳，不得跳過任何一個。JSON 格式：每個 key 是原輸入單字（不改拼寫、不改大小寫），value 包含 chinese（繁體中文含詞性前綴，如 "n. 唾液"）、pos（n./v./adj./adv./phrase）、pronunciation（美式 IPA）。只輸出 JSON，不要其他文字。' },
@@ -1450,6 +1452,7 @@ async function batchTranslate() {
               model: 'openai/gpt-oss-120b',
               temperature: 0,
               max_tokens: 120,
+              reasoning_format: 'hidden',
               response_format: { type: 'json_object' },
               messages: [
                 { role: 'system', content: '你是英文字典助理。【語言規定】所有中文輸出必須使用繁體中文（台灣），絕對禁止使用簡體中文，嚴禁使用日文（含漢字新字體與假名）。輸入是一個英文單字，回傳 JSON，key 為該單字，value 包含 chinese（繁體中文含詞性前綴，如 "n. 唾液"）、pos（n./v./adj./adv./phrase）、pronunciation（美式 IPA）。只輸出 JSON。' },
