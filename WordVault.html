@@ -1412,7 +1412,10 @@ async function batchTranslate() {
         const retryResp = await groqFetch({
           model: 'openai/gpt-oss-120b',
           temperature: 0,
-          max_tokens: 600,
+          // 08-19修正：600 tokens換算約僅夠12個字的翻譯量，但stillMissing可能包含遠超過12個
+          // 缺翻譯的字（一次性塞進單一請求），原本會攔腰截斷；改成跟主要批次翻譯迴圈（CHUNK=15
+          // 個字用2000 tokens）同一個量級的預算
+          max_tokens: 2000,
           reasoning_effort: 'low',
           response_format: { type: 'json_object' },
           messages: [
