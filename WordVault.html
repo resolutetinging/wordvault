@@ -1321,7 +1321,6 @@ async function batchTranslate() {
         model: 'openai/gpt-oss-120b',
         temperature: 0.1,
         max_tokens: 2000,
-        reasoning_format: 'hidden',
         reasoning_effort: 'low',
         response_format: { type: 'json_object' },
         messages: [{
@@ -1414,7 +1413,6 @@ async function batchTranslate() {
           model: 'openai/gpt-oss-120b',
           temperature: 0,
           max_tokens: 600,
-          reasoning_format: 'hidden',
           reasoning_effort: 'low',
           response_format: { type: 'json_object' },
           messages: [
@@ -1454,7 +1452,6 @@ async function batchTranslate() {
               model: 'openai/gpt-oss-120b',
               temperature: 0,
               max_tokens: 600,
-              reasoning_format: 'hidden',
               reasoning_effort: 'low',
               response_format: { type: 'json_object' },
               messages: [
