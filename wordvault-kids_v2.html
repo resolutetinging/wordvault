@@ -1066,6 +1066,15 @@
 'use strict';
 
 // ═══════════════════════════════════════════
+//  GROQ MODEL-TIER 備援（primary 掛掉時換 backup model 重試一次；429 rate-limit / 截斷重試邏輯各自保留，不受影響）
+// ═══════════════════════════════════════════
+const GROQ_PRIMARY_MODEL = 'openai/gpt-oss-120b';
+const GROQ_BACKUP_MODEL = 'openai/gpt-oss-20b';
+function _groqModelLooksDown(e) {
+  return (e && e.status >= 500) || /decommission|not[ _-]?found|does not exist|invalid model|model_not_active/i.test((e && e.detail) || '');
+}
+
+// ═══════════════════════════════════════════
 //  STORAGE KEYS — 全部加 -kids 後綴，與原版完全隔離
 // ═══════════════════════════════════════════
 const STORAGE_KEY      = 'wordvault_v1-kids';
@@ -1362,7 +1371,7 @@ async function batchTranslate() {
 
   const CHUNK=15; let translated=0;
 
-  async function groqFetch(body) {
+  async function _groqFetchOnce(body) {
     for (let att=0; att<4; att++) {
       const r = await fetch('https://api.groq.com/openai/v1/chat/completions', {
         method:'POST',
@@ -1376,7 +1385,13 @@ async function batchTranslate() {
         showStatus('translate-status',`⏳ Rate limit，${Math.round(ms/1000)} 秒後重試…`,'info');
         await new Promise(r=>setTimeout(r,ms)); continue;
       }
-      if (!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e.error?.message||`Groq API 錯誤 ${r.status}`); }
+      if (!r.ok) {
+        const e=await r.json().catch(()=>({}));
+        const detail = e.error?.message || '';
+        const err = new Error(detail || `Groq API 錯誤 ${r.status}`);
+        err.status = r.status; err.detail = detail;
+        throw err;
+      }
       let data = await r.json();
       const choice = data.choices?.[0];
       if (!(choice?.message?.content||'').trim() && choice?.finish_reason === 'length') {
@@ -1391,6 +1406,20 @@ async function batchTranslate() {
       return data;
     }
     throw new Error('重試多次仍失敗');
+  }
+
+  // model 層級備援：primary 疑似故障（5xx / 已棄用 / model not found）才換 backup model 重打一次；
+  // 429 rate-limit 重試邏輯全部保留在 _groqFetchOnce 內不動，這裡只是外層再包一層
+  async function groqFetch(body) {
+    try {
+      return await _groqFetchOnce(body);
+    } catch (e) {
+      if (_groqModelLooksDown(e) && body.model !== GROQ_BACKUP_MODEL) {
+        console.warn('Groq primary model 疑似故障，改用備援 model 重試一次：', e.message);
+        return await _groqFetchOnce({ ...body, model: GROQ_BACKUP_MODEL });
+      }
+      throw e;
+    }
   }
 
   try {
@@ -2519,21 +2548,37 @@ label 欄位務必使用繁體中文（台灣正體），嚴禁簡體字，嚴�
 輸出純 JSON 陣列（直接從 [ 開始，不加 markdown）：
 [{"id":"英文唯一id","emoji":"一個emoji","label":"4字以內中文"}]`;
   try {
-    async function _once(maxTok){
+    async function _once(maxTok, model){
       const r = await fetch('https://api.groq.com/openai/v1/chat/completions',{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':'Bearer '+apiKey},
-        body:JSON.stringify({model:'openai/gpt-oss-120b',messages:[{role:'user',content:prompt}],max_tokens:maxTok,temperature:.8,reasoning_effort:'low'})
+        body:JSON.stringify({model:model||GROQ_PRIMARY_MODEL,messages:[{role:'user',content:prompt}],max_tokens:maxTok,temperature:.8,reasoning_effort:'low'})
       });
-      if(!r.ok) throw new Error('API '+r.status);
+      if(!r.ok){
+        const err=await r.json().catch(()=>({}));
+        const detail=err.error?.message||'';
+        const e=new Error(detail||('API '+r.status));
+        e.status=r.status; e.detail=detail;
+        throw e;
+      }
       const j=await r.json();
       const choice=j.choices?.[0];
       return {content:(choice?.message?.content||'').trim(), finishReason:choice?.finish_reason};
     }
-    let res = await _once(600);
+    let activeModel = GROQ_PRIMARY_MODEL;
+    let res;
+    try {
+      res = await _once(600, activeModel);
+    } catch(e){
+      // model 層級備援：疑似故障才換 backup model 重打一次
+      if(_groqModelLooksDown(e)){
+        activeModel = GROQ_BACKUP_MODEL;
+        res = await _once(600, activeModel);
+      } else throw e;
+    }
     if(!res.content && res.finishReason==='length'){
       // reasoning model 機率性把 max_tokens 全吃在隱藏推理上、content 空白：放大預算重試一次
-      res = await _once(1080);
+      res = await _once(1080, activeModel);
     }
     const raw=res.content;
     const m=raw.match(/\[[\s\S]*\]/);
@@ -2893,21 +2938,37 @@ async function genGroqAdvice(profiles,allWords) {
   const chronic=allWords.filter(w=>w.errorCount>=3).length;
   const prompt=`你是一位溫暖的兒童英文學習顧問。以下是小學生的英文學習數據：\n- 總單字量 ${allWords.length} 個，從未出錯 ${neverWrong} 個，慣性失誤 ${chronic} 個\n- 高頻錯誤：${errList||'目前無記錄'}\n- 共 ${profiles.length} 位孩子\n\n請務必使用繁體中文（台灣正體）給家長 3 條溫暖實用的親職建議，嚴禁簡體字，嚴禁日文（含漢字新字體與假名），幫助孩子改善英文學習。語氣輕鬆，每條 ≤ 30 字，直接輸出條列，無需標題。`;
   try{
-    async function _once(maxTok){
+    async function _once(maxTok, model){
       const r=await fetch('https://api.groq.com/openai/v1/chat/completions',{
         method:'POST',
         headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},
-        body:JSON.stringify({model:'openai/gpt-oss-120b',messages:[{role:'user',content:prompt}],max_tokens:maxTok,temperature:.7,reasoning_effort:'low'})
+        body:JSON.stringify({model:model||GROQ_PRIMARY_MODEL,messages:[{role:'user',content:prompt}],max_tokens:maxTok,temperature:.7,reasoning_effort:'low'})
       });
-      if(!r.ok) throw new Error('');
+      if(!r.ok){
+        const err=await r.json().catch(()=>({}));
+        const detail=err.error?.message||'';
+        const e=new Error(detail);
+        e.status=r.status; e.detail=detail;
+        throw e;
+      }
       const j=await r.json();
       const choice=j.choices?.[0];
       return {content:choice?.message?.content||'', finishReason:choice?.finish_reason};
     }
-    let res = await _once(600);
+    let activeModel = GROQ_PRIMARY_MODEL;
+    let res;
+    try {
+      res = await _once(600, activeModel);
+    } catch(e){
+      // model 層級備援：疑似故障才換 backup model 重打一次
+      if(_groqModelLooksDown(e)){
+        activeModel = GROQ_BACKUP_MODEL;
+        res = await _once(600, activeModel);
+      } else throw e;
+    }
     if(!res.content.trim() && res.finishReason==='length'){
       // reasoning model 機率性把 max_tokens 全吃在隱藏推理上、content 空白：放大預算重試一次
-      res = await _once(1080);
+      res = await _once(1080, activeModel);
     }
     const rawAdvice=res.content;
     // 繁中保底：cc_zht.js 為外部非同步載入的共用檔，未就緒時原樣使用不報錯

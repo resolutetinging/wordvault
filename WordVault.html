@@ -956,6 +956,14 @@
 
 <script>
 // ═══════════════════════════════════════════
+//  GROQ MODEL-TIER 備援（primary 掛掉時換 backup model 重試一次；429 rate-limit 重試邏輯各自保留在 groqFetch 內，不受影響）
+// ═══════════════════════════════════════════
+const GROQ_PRIMARY_MODEL = 'openai/gpt-oss-120b';
+const GROQ_BACKUP_MODEL = 'openai/gpt-oss-20b';
+function _groqModelLooksDown(e) {
+  return (e && e.status >= 500) || /decommission|not[ _-]?found|does not exist|invalid model|model_not_active/i.test((e && e.detail) || '');
+}
+// ═══════════════════════════════════════════
 //  DATA LAYER
 // ═══════════════════════════════════════════
 const STORAGE_KEY = 'wordvault_v1';
@@ -1270,7 +1278,7 @@ async function batchTranslate() {
   let translated = 0;
 
   // Groq rate-limit aware fetch: auto-retry on 429
-  async function groqFetch(body) {
+  async function _groqFetchOnce(body) {
     const MAX_RETRIES = 4;
     for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
       const resp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
@@ -1294,7 +1302,11 @@ async function batchTranslate() {
 
       if (!resp.ok) {
         const err = await resp.json().catch(() => ({}));
-        throw new Error(err.error?.message || `Groq API 錯誤 ${resp.status}`);
+        const detail = err.error?.message || '';
+        const e = new Error(detail || `Groq API 錯誤 ${resp.status}`);
+        e.status = resp.status;
+        e.detail = detail;
+        throw e;
       }
       let data = await resp.json();
       const choice = data.choices?.[0];
@@ -1310,6 +1322,20 @@ async function batchTranslate() {
       return data;
     }
     throw new Error('重試多次仍失敗，請稍後再試');
+  }
+
+  // model 層級備援：primary 疑似故障（5xx / 已棄用 / model not found）才換 backup model 重打一次；
+  // 429 rate-limit 重試邏輯全部保留在 _groqFetchOnce 內不動，這裡只是外層再包一層
+  async function groqFetch(body) {
+    try {
+      return await _groqFetchOnce(body);
+    } catch (e) {
+      if (_groqModelLooksDown(e) && body.model !== GROQ_BACKUP_MODEL) {
+        console.warn('Groq primary model 疑似故障，改用備援 model 重試一次：', e.message);
+        return await _groqFetchOnce({ ...body, model: GROQ_BACKUP_MODEL });
+      }
+      throw e;
+    }
   }
 
   try {
