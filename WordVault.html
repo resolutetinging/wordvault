@@ -1296,7 +1296,18 @@ async function batchTranslate() {
         const err = await resp.json().catch(() => ({}));
         throw new Error(err.error?.message || `Groq API 錯誤 ${resp.status}`);
       }
-      return resp;
+      let data = await resp.json();
+      const choice = data.choices?.[0];
+      if (!(choice?.message?.content || '').trim() && choice?.finish_reason === 'length') {
+        // reasoning model（gpt-oss）機率性把 max_tokens 全吃在隱藏推理上、content 空白：放大預算重試一次
+        const retryResp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
+          body: JSON.stringify({ ...body, max_tokens: Math.round((body.max_tokens || 2000) * 1.8) })
+        });
+        if (retryResp.ok) data = await retryResp.json();
+      }
+      return data;
     }
     throw new Error('重試多次仍失敗，請稍後再試');
   }
@@ -1317,7 +1328,7 @@ async function batchTranslate() {
         ? '你是英文字典助理。【語言規定】所有中文輸出必須使用繁體中文（台灣），絕對禁止使用簡體中文，嚴禁使用日文（含漢字新字體與假名），違者視為錯誤。輸入是以換行分隔的英文單字或片語，每行一個。規則：(1) 回傳一個 JSON 物件，每一行輸入對應一個 key-value，不得合併多行為一個 key。(2) key 必須與該行輸入逐字相同，包含拼寫錯誤，絕對不得修正錯字或改變任何字元，不含方括號內容。(3) value 是包含三個欄位的物件：chinese（繁體中文解釋，格式如 "n. 韌性；彈性"）、pos（詞性縮寫，如 n./v./adj./adv./phrase）、pronunciation（美式 IPA）。(4) 若某行為片段或難以翻譯，仍須回傳，chinese 填入最接近的解釋。(5) 只輸出 JSON，不要其他文字。'
         : '你是英文字典助理。輸入是以換行分隔的英文單字或片語（方括號內是已有的中文供參考），只需補充 pos 和 pronunciation。規則：(1) 每一行對應一個 key-value，不得合併多行。(2) key 必須與該行輸入逐字相同，包含拼寫錯誤，絕對不得修正錯字，不含方括號內容。(3) value 包含 pos（詞性縮寫）和 pronunciation（美式 IPA）兩個欄位。(4) 只輸出 JSON，不要其他文字。';
 
-      const resp = await groqFetch({
+      const data = await groqFetch({
         model: 'openai/gpt-oss-120b',
         temperature: 0.1,
         max_tokens: 2000,
@@ -1332,7 +1343,6 @@ async function batchTranslate() {
         }]
       });
 
-      const data = await resp.json();
       const raw = data.choices?.[0]?.message?.content || '{}';
 
       let translations;
@@ -1409,7 +1419,7 @@ async function batchTranslate() {
       showStatus('translate-status', `⏳ 自動重試 ${stillMissing.length} 個未取得翻譯的單字…`, 'info');
       await new Promise(r => setTimeout(r, 800));
       try {
-        const retryResp = await groqFetch({
+        const retryData = await groqFetch({
           model: 'openai/gpt-oss-120b',
           temperature: 0,
           // 08-19修正：600 tokens換算約僅夠12個字的翻譯量，但stillMissing可能包含遠超過12個
@@ -1423,7 +1433,7 @@ async function batchTranslate() {
             { role: 'user', content: stillMissing.map(w => w.word).join('\n') }
           ]
         });
-        const retryRaw = (await retryResp.json()).choices?.[0]?.message?.content || '{}';
+        const retryRaw = retryData.choices?.[0]?.message?.content || '{}';
         let retryT;
         try { retryT = JSON.parse(retryRaw.replace(/```json|```/g, '').trim()); } catch { retryT = {}; }
         // 繁中保底：cc_zht.js 為外部非同步載入的共用檔，未就緒時原樣使用不報錯
@@ -1451,7 +1461,7 @@ async function batchTranslate() {
           const fw = finalMissing[fi];
           showStatus('translate-status', `⏳ 逐字補翻譯 ${fi + 1} / ${finalMissing.length}：${escHtml(fw.word)}…`, 'info');
           try {
-            const singleResp = await groqFetch({
+            const singleData = await groqFetch({
               model: 'openai/gpt-oss-120b',
               temperature: 0,
               max_tokens: 600,
@@ -1462,7 +1472,7 @@ async function batchTranslate() {
                 { role: 'user', content: fw.word }
               ]
             });
-            const sRaw = (await singleResp.json()).choices?.[0]?.message?.content || '{}';
+            const sRaw = singleData.choices?.[0]?.message?.content || '{}';
             let sT; try { sT = JSON.parse(sRaw.replace(/```json|```/g,'').trim()); } catch { sT={}; }
             // 繁中保底：cc_zht.js 為外部非同步載入的共用檔，未就緒時原樣使用不報錯
             if (typeof s2tDeep === 'function') sT = s2tDeep(sT);

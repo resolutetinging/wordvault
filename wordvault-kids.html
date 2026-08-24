@@ -1097,7 +1097,18 @@ async function batchTranslate() {
         await new Promise(r=>setTimeout(r,ms)); continue;
       }
       if (!r.ok) { const e=await r.json().catch(()=>({})); throw new Error(e.error?.message||`Groq API 錯誤 ${r.status}`); }
-      return r;
+      let data = await r.json();
+      const choice = data.choices?.[0];
+      if (!(choice?.message?.content||'').trim() && choice?.finish_reason === 'length') {
+        // reasoning model（gpt-oss）機率性把 max_tokens 全吃在隱藏推理上、content 空白：放大預算重試一次
+        const r2 = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+          method:'POST',
+          headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},
+          body: JSON.stringify({...body, max_tokens: Math.round((body.max_tokens||2000)*1.8)})
+        });
+        if (r2.ok) data = await r2.json();
+      }
+      return data;
     }
     throw new Error('重試多次仍失敗');
   }
@@ -1111,12 +1122,11 @@ async function batchTranslate() {
         ? 'You are a dictionary API. Return ONLY a flat JSON object where each key is exactly the English word as provided, and each value is {chinese, pos, pronunciation}. chinese must be Traditional Chinese (Taiwan standard) with POS prefix (e.g. "n.蘋果"). Never output Simplified Chinese characters. Never output Japanese (including kanji shinjitai forms and kana). Do NOT wrap in any container key. Example: {"apple":{"chinese":"n.蘋果","pos":"n","pronunciation":"/ˈæpəl/"}}'
         : 'You are a dictionary API. Return ONLY a flat JSON object where each key is exactly the English word (no brackets), and each value is {pos, pronunciation}. Do NOT wrap in any container key.';
 
-      const resp = await groqFetch({
+      const data = await groqFetch({
         model:'openai/gpt-oss-120b', temperature:0.1, max_tokens:2000, reasoning_effort:'low',
         response_format:{type:'json_object'},
         messages:[{role:'system',content:sys},{role:'user',content:wStr}]
       });
-      const data = await resp.json();
       const raw  = data.choices?.[0]?.message?.content||'{}';
       let t;
       try {
