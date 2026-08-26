@@ -1310,7 +1310,7 @@ async function batchTranslate() {
       }
       let data = await resp.json();
       const choice = data.choices?.[0];
-      if (!(choice?.message?.content || '').trim() && choice?.finish_reason === 'length') {
+      if (choice?.finish_reason === 'length') { // 08-26：不再要求content空白，殘句同樣算截斷
         // reasoning model（gpt-oss）機率性把 max_tokens 全吃在隱藏推理上、content 空白：放大預算重試一次
         const retryResp = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method: 'POST',

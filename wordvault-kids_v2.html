@@ -1394,8 +1394,9 @@ async function batchTranslate() {
       }
       let data = await r.json();
       const choice = data.choices?.[0];
-      if (!(choice?.message?.content||'').trim() && choice?.finish_reason === 'length') {
-        // reasoning model（gpt-oss）機率性把 max_tokens 全吃在隱藏推理上、content 空白：放大預算重試一次
+      if (choice?.finish_reason === 'length') {
+        // reasoning model（gpt-oss）機率性把max_tokens吃在隱藏推理上：可能content全空、
+        // 也可能只是殘句沒寫完（08-26修正，不再要求content必須空白才重試）：放大預算重試一次
         const r2 = await fetch('https://api.groq.com/openai/v1/chat/completions', {
           method:'POST',
           headers:{'Content-Type':'application/json','Authorization':`Bearer ${apiKey}`},
@@ -2576,8 +2577,9 @@ label 欄位務必使用繁體中文（台灣正體），嚴禁簡體字，嚴�
         res = await _once(600, activeModel);
       } else throw e;
     }
-    if(!res.content && res.finishReason==='length'){
-      // reasoning model 機率性把 max_tokens 全吃在隱藏推理上、content 空白：放大預算重試一次
+    if(res.finishReason==='length'){
+      // reasoning model機率性把max_tokens吃在隱藏推理上：可能content全空、也可能只是
+      // 殘句沒寫完（08-26修正，不再要求content必須空白才重試），放大預算重試一次
       res = await _once(1080, activeModel);
     }
     const raw=res.content;
@@ -2966,8 +2968,9 @@ async function genGroqAdvice(profiles,allWords) {
         res = await _once(600, activeModel);
       } else throw e;
     }
-    if(!res.content.trim() && res.finishReason==='length'){
-      // reasoning model 機率性把 max_tokens 全吃在隱藏推理上、content 空白：放大預算重試一次
+    if(res.finishReason==='length'){
+      // reasoning model機率性把max_tokens吃在隱藏推理上：可能content全空、也可能只是
+      // 殘句沒寫完（08-26修正，不再要求content必須空白才重試），放大預算重試一次
       res = await _once(1080, activeModel);
     }
     const rawAdvice=res.content;
