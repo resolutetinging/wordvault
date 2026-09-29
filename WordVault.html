@@ -1409,8 +1409,13 @@ async function batchTranslate() {
         const inChunk = chunk.find(c => c.word === w.word);
         if (!inChunk) continue;
 
-        const found = findTranslation(w.word);
+        let found = findTranslation(w.word);
         if (!found) continue;
+        // AI偶爾把單字的value吐成JSON字串而非物件（雙重編碼），未偵測時found.chinese
+        // 會是undefined、退回把整段JSON字串塞進w.chinese顯示（09-29實例：wagon/aspirational）
+        if (typeof found === 'string') {
+          try { found = JSON.parse(found); } catch { /* 非JSON字串，維持原樣走舊fallback */ }
+        }
 
         if (!w.chinese) {
           // Full translation
