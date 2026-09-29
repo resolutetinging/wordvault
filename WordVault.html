@@ -1355,7 +1355,7 @@ async function batchTranslate() {
         : '你是英文字典助理。輸入是以換行分隔的英文單字或片語（方括號內是已有的中文供參考），只需補充 pos 和 pronunciation。規則：(1) 每一行對應一個 key-value，不得合併多行。(2) key 必須與該行輸入逐字相同，包含拼寫錯誤，絕對不得修正錯字，不含方括號內容。(3) value 包含 pos（詞性縮寫）和 pronunciation（美式 IPA）兩個欄位。(4) 只輸出 JSON，不要其他文字。';
 
       const data = await groqFetch({
-        model: 'openai/gpt-oss-120b',
+        model: GROQ_PRIMARY_MODEL,
         temperature: 0.1,
         max_tokens: 2000,
         reasoning_effort: 'low',
@@ -1451,7 +1451,7 @@ async function batchTranslate() {
       await new Promise(r => setTimeout(r, 800));
       try {
         const retryData = await groqFetch({
-          model: 'openai/gpt-oss-120b',
+          model: GROQ_PRIMARY_MODEL,
           temperature: 0,
           // 08-19修正：600 tokens換算約僅夠12個字的翻譯量，但stillMissing可能包含遠超過12個
           // 缺翻譯的字（一次性塞進單一請求），原本會攔腰截斷；改成跟主要批次翻譯迴圈（CHUNK=15
@@ -1493,7 +1493,7 @@ async function batchTranslate() {
           showStatus('translate-status', `⏳ 逐字補翻譯 ${fi + 1} / ${finalMissing.length}：${escHtml(fw.word)}…`, 'info');
           try {
             const singleData = await groqFetch({
-              model: 'openai/gpt-oss-120b',
+              model: GROQ_PRIMARY_MODEL,
               temperature: 0,
               max_tokens: 600,
               reasoning_effort: 'low',
@@ -1561,7 +1561,7 @@ function wordCardHTML(w, opts = {}) {
         </div>
         <div class="word-right">
           <div class="word-zh ${showZh ? '' : 'hidden'}" ${zhId}>
-            ${w.chinese ? escHtml(stripPosPrefix(String(w.chinese), w.pos)) : '<em style="opacity:0.4">未翻譯</em>'}
+            ${w.chinese ? escHtml(stripPosPrefix(String(w.chinese), w.pos)) : '<span style="opacity:0.4">未翻譯</span>'}
           </div>
         </div>
         <div class="word-meta">
