@@ -1238,10 +1238,28 @@ function repairJSON(str) {
   return s;
 }
 
+// 09-29：phrase類（多字片語/句子）本來就不需要IPA音標，不算未完成；其餘欄位缺一項都算未完成。
+// 統一供批次翻譯的重試安全網使用，避免「已有中文但缺詞性/音標」的字掉出所有重試迴圈之外。
+function isIncomplete(w) {
+  if (!String(w.chinese || '').trim()) return true;
+  if (!String(w.pos || '').trim()) return true;
+  if (w.pos !== 'phrase' && !String(w.pronunciation || '').trim()) return true;
+  return false;
+}
+
+// 09-29：字典API/AI回傳的IPA音標有沒有包`/斜線/`不保證一致，統一在寫入前正規化成有斜線，
+// 避免同一份單字庫裡「devotee」沒斜線、「moth」有斜線這種顯示格式不統一。
+function normalizePron(text) {
+  const t = String(text || '').trim();
+  if (!t) return t;
+  const stripped = t.replace(/^\/+|\/+$/g, '');
+  return stripped ? `/${stripped}/` : t;
+}
+
 async function batchTranslate() {
   const words = loadWords();
   const needFull  = words.filter(w => !String(w.chinese || '').trim());          // need translation
-  const needPos   = words.filter(w => String(w.chinese || '').trim() && !w.pos); // have Chinese, missing pos
+  const needPos   = words.filter(w => String(w.chinese || '').trim() && isIncomplete(w)); // have Chinese, still incomplete
   const need      = [...needFull, ...needPos];
 
   if (need.length === 0) {
@@ -1420,14 +1438,14 @@ async function batchTranslate() {
         if (!w.chinese) {
           // Full translation
           w.chinese       = found.chinese || found;
-          w.pronunciation = found.pronunciation || '';
+          w.pronunciation = normalizePron(found.pronunciation) || '';
           w.pos           = found.pos || '';
           autoTagByPos(w);
           translated++;
-        } else if (!w.pos) {
-          // Pos-only enrichment — don't overwrite existing Chinese
-          w.pronunciation = found.pronunciation || w.pronunciation || '';
-          w.pos           = found.pos || '';
+        } else if (isIncomplete(w)) {
+          // Pos/pronunciation補齊 — don't overwrite existing Chinese
+          w.pronunciation = normalizePron(found.pronunciation) || w.pronunciation || '';
+          w.pos           = found.pos || w.pos || '';
           autoTagByPos(w);
           translated++;
         }
@@ -1444,10 +1462,10 @@ async function batchTranslate() {
     }
 
     const currentWords = loadWords();
-    const stillMissing = currentWords.filter(w => !String(w.chinese || '').trim());
+    const stillMissing = currentWords.filter(isIncomplete);
     if (stillMissing.length > 0) {
       // Auto-retry: send a fresh focused request for the words the AI skipped
-      showStatus('translate-status', `⏳ 自動重試 ${stillMissing.length} 個未取得翻譯的單字…`, 'info');
+      showStatus('translate-status', `⏳ 自動重試 ${stillMissing.length} 個未完成翻譯的單字…`, 'info');
       await new Promise(r => setTimeout(r, 800));
       try {
         const retryData = await groqFetch({
@@ -1474,17 +1492,19 @@ async function batchTranslate() {
         const findR = w => retryT[w] || retryT[w.toLowerCase()] || retryNorm.get(normR(w)) || null;
         const allW = loadWords();
         for (const w of allW) {
-          if (String(w.chinese || '').trim()) continue;
+          if (!isIncomplete(w)) continue;
           const f = findR(w.word);
           if (!f || !f.chinese) continue;
-          w.chinese = f.chinese; w.pronunciation = f.pronunciation || ''; w.pos = f.pos || '';
+          w.chinese       = w.chinese || f.chinese;
+          w.pronunciation = normalizePron(f.pronunciation) || w.pronunciation || '';
+          w.pos           = w.pos || f.pos || '';
           autoTagByPos(w);
           translated++;
         }
         saveWords(allW);
       } catch (e) { /* retry failed silently, show final state below */ }
 
-      const finalMissing = loadWords().filter(w => !String(w.chinese || '').trim());
+      const finalMissing = loadWords().filter(isIncomplete);
       if (finalMissing.length > 0) {
         // Last resort: one request per word — no key-matching issues possible
         const allW2 = loadWords();
@@ -1510,13 +1530,18 @@ async function batchTranslate() {
             const entry = sT[fw.word] || sT[fw.word.toLowerCase()] || Object.values(sT)[0];
             if (entry && entry.chinese) {
               const target = allW2.find(w => w.word === fw.word);
-              if (target) { target.chinese=entry.chinese; target.pronunciation=entry.pronunciation||''; target.pos=entry.pos||''; autoTagByPos(target); translated++; }
+              if (target) {
+                target.chinese       = target.chinese || entry.chinese;
+                target.pronunciation = normalizePron(entry.pronunciation) || target.pronunciation || '';
+                target.pos           = target.pos || entry.pos || '';
+                autoTagByPos(target); translated++;
+              }
             }
           } catch(e) { /* skip */ }
           if (fi < finalMissing.length - 1) await new Promise(r => setTimeout(r, 300));
         }
         saveWords(allW2);
-        const stillFinal = loadWords().filter(w => !String(w.chinese || '').trim());
+        const stillFinal = loadWords().filter(isIncomplete);
         if (stillFinal.length > 0) {
           showStatus('translate-status',
             `⚠ ${stillFinal.length} 個單字仍無法翻譯（可能為生僻詞或拼寫異常），請至單字庫手動補充：<br>` +
@@ -1879,7 +1904,7 @@ async function enrichWithDictPhonetics(words) {
     if (!result) continue;
     const target = all.find(x => x.word.toLowerCase() === w.word.toLowerCase());
     if (!target) continue;
-    if (result.pronunciation) target.pronunciation = result.pronunciation;
+    if (result.pronunciation) target.pronunciation = normalizePron(result.pronunciation);
     if (result.audioUrl) target.audioUrl = result.audioUrl;
   }
   saveWords(all);
@@ -1895,7 +1920,7 @@ async function refreshAllPhonetics() {
     if (_phoneticsStop) break;
     const result = await fetchDictData(words[i].word);
     if (result) {
-      if (result.pronunciation) { words[i].pronunciation = result.pronunciation; updated++; }
+      if (result.pronunciation) { words[i].pronunciation = normalizePron(result.pronunciation); updated++; }
       if (result.audioUrl) words[i].audioUrl = result.audioUrl;
     }
     if ((i + 1) % 5 === 0) {
