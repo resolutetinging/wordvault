@@ -1678,7 +1678,7 @@ function renderStudyTagFilter() {
   container.style.display = 'flex';
   container.innerHTML = tags.map(t => `
     <span class="tag-chip ${studySelectedTag === t ? 'active' : ''}"
-          onclick="studySelectTag('${escJs(t)}')">${t}</span>
+          onclick="studySelectTag('${escHtml(escJs(t))}')">${escHtml(t)}</span>
   `).join('');
 }
 
@@ -1694,7 +1694,7 @@ function renderStudyResourceFilter() {
           onclick="studyToggleResource('__notag__')">無標籤<span class="chip-count">${noTagCount}</span></span>` : '';
   container.innerHTML = resources.map(r => `
     <span class="resource-chip ${studySelectedResources.has(r) ? 'active' : ''}"
-          onclick="studyToggleResource('${escJs(r)}')">${escHtml(r)}<span class="chip-count">${counts[r] || 0}</span></span>
+          onclick="studyToggleResource('${escHtml(escJs(r))}')">${escHtml(r)}<span class="chip-count">${counts[r] || 0}</span></span>
   `).join('') + noTagChip;
 }
 
@@ -1771,8 +1771,8 @@ function renderStudyList() {
       index: i,
       showZh,
       showError: true,
-      actions: `<button class="star-btn${w.starred?' on':''}" id="wv-star-${i}" onclick="toggleStudyStar('${escJs(w.word)}',${i})" title="${w.starred?'取消標記':'標記重點'}">${w.starred?'★':'☆'}</button>
-               <button class="btn-icon" onclick="speak('${escJs(w.word)}','${escJs(w.audioUrl||'')}')" title="朗讀">🔊</button>`
+      actions: `<button class="star-btn${w.starred?' on':''}" id="wv-star-${i}" onclick="toggleStudyStar('${escHtml(escJs(w.word))}',${i})" title="${w.starred?'取消標記':'標記重點'}">${w.starred?'★':'☆'}</button>
+               <button class="btn-icon" onclick="speak('${escHtml(escJs(w.word))}','${escHtml(escJs(w.audioUrl||''))}')" title="朗讀">🔊</button>`
     })
   ).join('');
 
@@ -2002,7 +2002,7 @@ function renderQuizResourceFilter() {
           onclick="quizToggleResource('__notag__')">無標籤<span class="chip-count">${noTagCount}</span></span>` : '';
   container.innerHTML = resources.map(r => `
     <span class="resource-chip ${quizSelectedResources.has(r) ? 'active' : ''}"
-          onclick="quizToggleResource('${escJs(r)}')">${escHtml(r)}<span class="chip-count">${counts[r] || 0}</span></span>
+          onclick="quizToggleResource('${escHtml(escJs(r))}')">${escHtml(r)}<span class="chip-count">${counts[r] || 0}</span></span>
   `).join('') + noTagChip;
 }
 
@@ -2012,7 +2012,7 @@ function renderQuizTagFilter() {
   if (tags.length === 0) { container.innerHTML = '<span style="font-size:12px;color:var(--ink2);">（無標籤）</span>'; return; }
   container.innerHTML = tags.map(t => `
     <span class="tag-chip ${quizSelectedTags.has(t) ? 'active' : ''}"
-          onclick="quizToggleTag('${escJs(t)}')">${t}</span>
+          onclick="quizToggleTag('${escHtml(escJs(t))}')">${escHtml(t)}</span>
   `).join('');
 }
 
@@ -2178,7 +2178,7 @@ function renderQuestion() {
 
   document.getElementById('quiz-choices').innerHTML = choices.map(c => `
     <button class="choice-btn"
-      onclick="answerQuiz(this,'${escJs(c)}','${escJs(correctAns)}','${escJs(current.word)}')">
+      onclick="answerQuiz(this,'${escHtml(escJs(c))}','${escHtml(escJs(correctAns))}','${escHtml(escJs(current.word))}')">
       ${escHtml(c)}
     </button>
   `).join('');
@@ -2259,7 +2259,7 @@ function showResults() {
         showError: true,
         actions: `
           <span style="font-size:10px;color:var(--red);font-weight:600;">×${w.errorCount}</span>
-          <button class="btn-icon" onclick="speak('${escJs(w.word)}','${escJs(w.audioUrl||'')}')" title="朗讀">🔊</button>`
+          <button class="btn-icon" onclick="speak('${escHtml(escJs(w.word))}','${escHtml(escJs(w.audioUrl||''))}')" title="朗讀">🔊</button>`
       })
     ).join('');
 
@@ -2314,7 +2314,7 @@ function renderBankResourceFilter() {
           onclick="bankToggleResource('__notag__')">無標籤<span class="chip-count">${noTagCount}</span></span>` : '';
   container.innerHTML = resources.map(r => `
     <span class="resource-chip ${bankSelectedResources.has(r) ? 'active' : ''}"
-          onclick="bankToggleResource('${escJs(r)}')">${escHtml(r)}<span class="chip-count">${counts[r] || 0}</span></span>
+          onclick="bankToggleResource('${escHtml(escJs(r))}')">${escHtml(r)}<span class="chip-count">${counts[r] || 0}</span></span>
   `).join('') + noTagChip;
 }
 
@@ -2428,11 +2428,11 @@ function renderBank() {
         return wordCardHTML(w, {
           showError: true,
           actions: `<button class="star-btn${w.starred?' on':''}" data-word="${escHtml(w.word)}" onclick="toggleBankStar(this)" title="${w.starred?'取消標記':'標記重點'}">${w.starred?'★':'☆'}</button>
-                    <button class="btn-icon" onclick="speak('${escJs(w.word)}','${escJs(w.audioUrl||'')}')" title="朗讀">🔊</button>
-                    <button class="btn-icon" onclick="openEnEditor('${escJs(w.word)}')" title="編輯英文">Aa</button>
-                    <button class="btn-icon" onclick="openZhEditor('${escJs(w.word)}')" title="編輯中文">✏️</button>
-                    <button class="btn-icon" onclick="openTagEditor('${escJs(w.word)}')" title="編輯標籤">🏷</button>
-                    <button class="btn-icon" onclick="confirmDeleteWord('${escJs(w.word)}')" title="刪除">🗑</button>`
+                    <button class="btn-icon" onclick="speak('${escHtml(escJs(w.word))}','${escHtml(escJs(w.audioUrl||''))}')" title="朗讀">🔊</button>
+                    <button class="btn-icon" onclick="openEnEditor('${escHtml(escJs(w.word))}')" title="編輯英文">Aa</button>
+                    <button class="btn-icon" onclick="openZhEditor('${escHtml(escJs(w.word))}')" title="編輯中文">✏️</button>
+                    <button class="btn-icon" onclick="openTagEditor('${escHtml(escJs(w.word))}')" title="編輯標籤">🏷</button>
+                    <button class="btn-icon" onclick="confirmDeleteWord('${escHtml(escJs(w.word))}')" title="刪除">🗑</button>`
         });
       } catch { return ''; }
     }).join('');
@@ -2487,11 +2487,11 @@ function renderStarred() {
         return wordCardHTML(w, {
           showError: true,
           actions: `<button class="star-btn on" data-word="${escHtml(w.word)}" onclick="toggleStarredTab(this)" title="取消標記">★</button>
-                    <button class="btn-icon" onclick="speak('${escJs(w.word)}','${escJs(w.audioUrl||'')}')" title="朗讀">🔊</button>
-                    <button class="btn-icon" onclick="openEnEditor('${escJs(w.word)}')" title="編輯英文">Aa</button>
-                    <button class="btn-icon" onclick="openZhEditor('${escJs(w.word)}')" title="編輯中文">✏️</button>
-                    <button class="btn-icon" onclick="openTagEditor('${escJs(w.word)}')" title="編輯標籤">🏷</button>
-                    <button class="btn-icon" onclick="confirmDeleteWord('${escJs(w.word)}')" title="刪除">🗑</button>`
+                    <button class="btn-icon" onclick="speak('${escHtml(escJs(w.word))}','${escHtml(escJs(w.audioUrl||''))}')" title="朗讀">🔊</button>
+                    <button class="btn-icon" onclick="openEnEditor('${escHtml(escJs(w.word))}')" title="編輯英文">Aa</button>
+                    <button class="btn-icon" onclick="openZhEditor('${escHtml(escJs(w.word))}')" title="編輯中文">✏️</button>
+                    <button class="btn-icon" onclick="openTagEditor('${escHtml(escJs(w.word))}')" title="編輯標籤">🏷</button>
+                    <button class="btn-icon" onclick="confirmDeleteWord('${escHtml(escJs(w.word))}')" title="刪除">🗑</button>`
         });
       } catch { return ''; }
     }).join('');
@@ -2610,7 +2610,7 @@ function openTagEditor(word) {
   const userResources = allResources.filter(r => !PRESET_TAGS.includes(r));
   const chipsEl = document.getElementById('tag-editor-chips');
   const lbl = txt => `<div style="font-size:10px;font-weight:700;color:var(--ink2);text-transform:uppercase;letter-spacing:.08em;margin:8px 0 6px;width:100%;">${txt}</div>`;
-  const chip = r => `<span class="resource-chip ${tagEditorSelected.has(r)?'active':''}" id="tec-${escHtml(r)}" onclick="tagEditorToggle('${escJs(r)}')" style="cursor:pointer;">${escHtml(r)}</span>`;
+  const chip = r => `<span class="resource-chip ${tagEditorSelected.has(r)?'active':''}" id="tec-${escHtml(r)}" onclick="tagEditorToggle('${escHtml(escJs(r))}')" style="cursor:pointer;">${escHtml(r)}</span>`;
   chipsEl.innerHTML =
     lbl('類別') + PRESET_TAGS.map(chip).join('') +
     (userResources.length > 0 ? lbl('來源') + userResources.map(chip).join('') : '');
