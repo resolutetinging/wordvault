@@ -597,7 +597,9 @@
 
       <textarea id="import-input" placeholder="— 貼上 CSV 或純文字清單 —&#10;&#10;critter, 小動物；生物, #sloth_philosophy&#10;moth, 蛾；出蛀蟲, #sloth_philosophy&#10;&#10;— 或純單字清單 —&#10;&#10;ephemeral, adj&#10;resilience, n"></textarea>
       <label style="margin-top:10px;">📎 來源 Resource（選填，套用至本次全部匯入；CSV 第三欄可個別覆蓋）</label>
-      <input type="text" id="import-resource" placeholder="例：GRE 5000、Unit 3 課本、#sloth_philosophy…" />
+      <input type="text" id="import-resource" placeholder="例：GRE 5000、Unit 3 課本、#sloth_philosophy…" oninput="syncImportResourceChips()" />
+      <div id="import-resource-hint" style="font-size:12px;color:var(--ink2);margin-top:8px;">點選現有來源帶入（可複選，再點一次取消），避免打錯字分成兩類</div>
+      <div id="import-resource-chips" class="tag-filter-row" style="margin-top:6px;"></div>
       <div class="btn-row">
         <button class="btn btn-primary" onclick="importWords()">📥 匯入</button>
         <button class="btn btn-outline" onclick="document.getElementById('import-input').value=''">清空輸入</button>
@@ -1002,6 +1004,40 @@ function showScreen(name, btn) {
   if (name === 'quiz') { renderQuizResourceFilter(); renderQuizTagFilter(); }
   if (name === 'study') { renderStudyTagFilter(); renderStudyResourceFilter(); renderStudyList(); }
   if (name === 'starred') { renderStarred(); }
+  if (name === 'import') { renderImportResourceChips(); }
+}
+
+// 10-02：匯入頁來源輸入框下方列出現有來源，點選帶入避免 typo 拆成兩個分類
+function _importResourceList() {
+  return document.getElementById('import-resource').value.split(',').map(r => r.trim()).filter(Boolean);
+}
+function renderImportResourceChips() {
+  const container = document.getElementById('import-resource-chips');
+  const hint = document.getElementById('import-resource-hint');
+  if (!container) return;
+  const resources = getAllResources();
+  const counts = getResourceCounts();
+  const show = resources.length > 0;
+  container.style.display = show ? 'flex' : 'none';
+  if (hint) hint.style.display = show ? 'block' : 'none';
+  const picked = _importResourceList();
+  container.innerHTML = resources.map(r => `
+    <span class="resource-chip ${picked.includes(r) ? 'active' : ''}" data-res="${escHtml(r)}"
+          onclick="importToggleResource('${escHtml(escJs(r))}')">${escHtml(r)}<span class="chip-count">${counts[r] || 0}</span></span>
+  `).join('');
+}
+function syncImportResourceChips() {
+  const picked = _importResourceList();
+  document.querySelectorAll('#import-resource-chips .resource-chip').forEach(el => {
+    el.classList.toggle('active', picked.includes(el.dataset.res));
+  });
+}
+function importToggleResource(r) {
+  const list = _importResourceList();
+  const i = list.indexOf(r);
+  if (i > -1) list.splice(i, 1); else list.push(r);
+  document.getElementById('import-resource').value = list.join(', ');
+  syncImportResourceChips();
 }
 
 // ═══════════════════════════════════════════
@@ -1109,7 +1145,7 @@ function importWords() {
       const chinese = chineseRaw.trim();
       // All columns from index 2 onwards are treated as resource tags
       const lineResources = resCols.map(r => r.trim()).filter(Boolean);
-      const resources = lineResources.length ? lineResources : (batchResource ? [batchResource] : []);
+      const resources = lineResources.length ? lineResources : (batchResource ? batchResource.split(',').map(r => r.trim()).filter(Boolean) : []);
       if (!word) continue;
 
       if (existingSet.has(word.toLowerCase())) {
@@ -1141,7 +1177,7 @@ function importWords() {
 
       // Everything from col 2 onwards = resource tags
       const lineResources = parts.slice(2).map(r => r.trim()).filter(Boolean);
-      const resources = lineResources.length ? lineResources : (batchResource ? [batchResource] : []);
+      const resources = lineResources.length ? lineResources : (batchResource ? batchResource.split(',').map(r => r.trim()).filter(Boolean) : []);
       if (!word) continue;
 
       if (existingSet.has(word.toLowerCase())) {
@@ -1171,6 +1207,7 @@ function importWords() {
     `✅ 匯入 ${added} 個${skipped ? `，跳過重複 ${skipped} 個` : ''} ${extra}`,
     'success'
   );
+  renderImportResourceChips();
 }
 
 // ═══════════════════════════════════════════
@@ -3270,7 +3307,7 @@ refreshGistUI();
   const last = localStorage.getItem('wordvault_last_tab') || 'import';
   const valid = ['import', 'study', 'quiz', 'bank', 'starred'];
   const tab = valid.includes(last) ? last : 'import';
-  if (tab === 'import') return; // already default
+  if (tab === 'import') { try { renderImportResourceChips(); } catch(e) {} return; } // already default
   const btns = document.querySelectorAll('.nav-btn');
   let targetBtn = null;
   btns.forEach(b => {
