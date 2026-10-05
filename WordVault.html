@@ -1629,7 +1629,7 @@ function wordCardHTML(w, opts = {}) {
         </div>
         <div class="word-meta">
           ${resourceChips(w)}
-          ${showError && w.errorCount ? `<span class="word-error">❌ ${w.errorCount} 次</span>` : ''}
+          ${showError && w.errorCount ? `<span class="word-error">❌ ${Number(w.errorCount) || 0} 次</span>` : ''}
         </div>
       </div>
       ${actions ? `<div class="word-card-actions">${actions}</div>` : ''}
@@ -2259,7 +2259,7 @@ function showResults() {
       wordCardHTML(w, {
         showError: true,
         actions: `
-          <span style="font-size:10px;color:var(--red);font-weight:600;">×${w.errorCount}</span>
+          <span style="font-size:10px;color:var(--red);font-weight:600;">×${Number(w.errorCount) || 0}</span>
           <button class="btn-icon" onclick="speak('${escHtml(escJs(w.word))}','${escHtml(escJs(w.audioUrl||''))}')" title="朗讀">🔊</button>`
       })
     ).join('');
@@ -2467,7 +2467,7 @@ function renderBank() {
 
     container.innerHTML = cards + nav;
   } catch(err) {
-    container.innerHTML = `<div class="empty-state">錯誤：${err.message}</div>`;
+    container.innerHTML = `<div class="empty-state">錯誤：${escHtml(err.message)}</div>`;
   }
 }
 
@@ -2526,7 +2526,7 @@ function renderStarred() {
 
     container.innerHTML = cards + nav;
   } catch(err) {
-    container.innerHTML = `<div class="empty-state">錯誤：${err.message}</div>`;
+    container.innerHTML = `<div class="empty-state">錯誤：${escHtml(err.message)}</div>`;
   }
 }
 
@@ -2913,8 +2913,15 @@ async function syncFromGist() {
     if (!Array.isArray(incoming)) throw new Error('Gist 資料格式錯誤');
 
     const normalized = incoming
-      .filter(w => w.word)
-      .map(w => ({ ...w, word: normalizeWordCase(w.word.trim()) }));
+      .filter(w => w && typeof w === 'object' && typeof w.word === 'string' && w.word.trim())
+      .map(w => {
+        const _s = x => typeof x === 'string' ? x : '';
+        const _ec = Number(w.errorCount);
+        return { ...w, word: normalizeWordCase(w.word.trim()),
+          tag: _s(w.tag), resource: _s(w.resource), chinese: _s(w.chinese),
+          pronunciation: _s(w.pronunciation), pos: _s(w.pos), audioUrl: _s(w.audioUrl),
+          errorCount: Number.isFinite(_ec) && _ec > 0 ? Math.floor(_ec) : 0 };
+      });
 
     saveWords(normalized);
     updateGlobalCount();
@@ -3125,13 +3132,15 @@ function restoreFromJSON(text) {
   let added = 0, skipped = 0;
 
   for (const w of incoming) {
-    if (!w.word) continue;
+    if (!w || typeof w !== 'object' || typeof w.word !== 'string' || !w.word.trim()) continue;
+    const _s = x => typeof x === 'string' ? x : '';
+    const _ec = Number(w.errorCount);
     const word = normalizeWordCase(w.word.trim());
     if (existingSet.has(word.toLowerCase())) { skipped++; continue; }
     existing.push({
-      word, tag: w.tag || '', resource: w.resource || '',
-      chinese: w.chinese || '', errorCount: w.errorCount || 0, pronunciation: w.pronunciation || '',
-      pos: w.pos || '', audioUrl: w.audioUrl || ''
+      word, tag: _s(w.tag), resource: _s(w.resource),
+      chinese: _s(w.chinese), errorCount: Number.isFinite(_ec) && _ec > 0 ? Math.floor(_ec) : 0, pronunciation: _s(w.pronunciation),
+      pos: _s(w.pos), audioUrl: _s(w.audioUrl)
     });
     existingSet.add(word.toLowerCase());
     added++;

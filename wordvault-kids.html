@@ -832,7 +832,7 @@ function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 function escJs(s) {
-  return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"').replace(/\n/g,'\\n');
+  return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"').replace(/\n/g,'\\n').replace(/\r/g,'\\r').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
 }
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -936,10 +936,10 @@ function handleImportFile(input) {
     const text = e.target.result;
     if (file.name.endsWith('.json')) {
       try { restoreFromJSON(text, 'import-status'); }
-      catch(err) { showStatus('import-status', `❌ JSON 格式錯誤：${err.message}`, 'error'); }
+      catch(err) { showStatus('import-status', `❌ JSON 格式錯誤：${escHtml(err.message)}`, 'error'); }
     } else {
       document.getElementById('import-input').value = text;
-      showStatus('import-status', `📂 已載入「${file.name}」，點「匯入」繼續`, 'info');
+      showStatus('import-status', `📂 已載入「${escHtml(file.name)}」，點「匯入」繼續`, 'info');
     }
   };
   reader.readAsText(file, 'UTF-8');
@@ -1212,7 +1212,7 @@ async function batchTranslate() {
       showStatus('translate-status','⚠️ 翻譯完成但未更新任何單字，請確認 API Key 正確且單字庫有未翻譯的單字','error');
     }
   } catch(err) {
-    showStatus('translate-status',`❌ 錯誤：${err.message}（請確認 API Key 正確、網路正常）`,'error');
+    showStatus('translate-status',`❌ 錯誤：${escHtml(err.message)}（請確認 API Key 正確、網路正常）`,'error');
   } finally {
     btn.innerHTML='✨ 開始 AI 翻譯'; btn.disabled=false; updateGlobalCount();
   }
@@ -1336,7 +1336,7 @@ function renderStudyResourceFilter() {
   const noTag=noTagCount?`<span class="resource-chip ${studySelectedResources.has('__notag__')?'active':''}"
     style="border-style:dashed;" onclick="studyToggleRes('__notag__')">無標籤<span class="chip-count">${noTagCount}</span></span>`:'';
   el.innerHTML=resources.map(r=>`<span class="resource-chip ${studySelectedResources.has(r)?'active':''}"
-    onclick="studyToggleRes('${escJs(r)}')">${escHtml(r)}<span class="chip-count">${counts[r]||0}</span></span>`
+    onclick="studyToggleRes('${escHtml(escJs(r))}')">${escHtml(r)}<span class="chip-count">${counts[r]||0}</span></span>`
   ).join('')+noTag;
 }
 function studyToggleRes(res) {
@@ -1395,7 +1395,7 @@ function renderCard() {
 
   // Progress
   document.getElementById('fc-progress').textContent=`${studyIdx+1} / ${studyWords.length}`;
-  document.getElementById('fc-err-label').textContent=w.errorCount?`❌ 已錯 ${w.errorCount} 次`:'';
+  document.getElementById('fc-err-label').textContent=w.errorCount?`❌ 已錯 ${Number(w.errorCount)||0} 次`:'';
 
   // Front
   document.getElementById('fc-word').textContent=w.word;
@@ -1453,7 +1453,7 @@ function markUnknown() {
     const all=loadWords(); const f=all.find(x=>x.word===w.word);
     if (f) { f.errorCount=(f.errorCount||0)+1; saveWords(all); }
     w.errorCount=(w.errorCount||0)+1;
-    document.getElementById('fc-err-label').textContent=`❌ 已錯 ${w.errorCount} 次`;
+    document.getElementById('fc-err-label').textContent=`❌ 已錯 ${Number(w.errorCount)||0} 次`;
   }
   if (studyIdx<studyWords.length-1) nextCard();
 }
@@ -1500,7 +1500,7 @@ function renderQuizResourceFilter() {
   const noChip=noTag?`<span class="resource-chip ${quizSelRes.has('__notag__')?'active':''}"
     style="border-style:dashed;" onclick="quizToggleRes('__notag__')">無標籤<span class="chip-count">${noTag}</span></span>`:'';
   el.innerHTML=res.map(r=>`<span class="resource-chip ${quizSelRes.has(r)?'active':''}"
-    onclick="quizToggleRes('${escJs(r)}')">${escHtml(r)}<span class="chip-count">${counts[r]||0}</span></span>`
+    onclick="quizToggleRes('${escHtml(escJs(r))}')">${escHtml(r)}<span class="chip-count">${counts[r]||0}</span></span>`
   ).join('')+noChip;
 }
 function quizToggleRes(r) {
@@ -1602,7 +1602,7 @@ function renderQuestion() {
   document.getElementById('quiz-q').textContent = question;
   document.getElementById('quiz-choices').innerHTML = choices.map(c=>`
     <button class="choice-btn"
-      onclick="answerQuiz(this,'${escJs(c)}','${escJs(correctAns)}','${escJs(cur.word)}')">
+      onclick="answerQuiz(this,'${escHtml(escJs(c))}','${escHtml(escJs(correctAns))}','${escHtml(escJs(cur.word))}')">
       ${escHtml(c)}
     </button>`).join('');
 }
@@ -1681,7 +1681,7 @@ function showResults() {
           <div class="wrong-en">${escHtml(w.word)}</div>
           <div class="wrong-zh">${escHtml(w.chinese||'')}</div>
         </div>
-        <button class="btn-icon" onclick="speak('${escJs(w.word)}','${escJs(w.audioUrl||'')}')">🔊</button>
+        <button class="btn-icon" onclick="speak('${escHtml(escJs(w.word))}','${escHtml(escJs(w.audioUrl||''))}')">🔊</button>
       </div>`).join('');
     studyWords=unique;
   } else {
@@ -1752,7 +1752,7 @@ function restoreBackup(input) {
     try {
       if (file.name.endsWith('.json')) restoreFromJSON(e.target.result,'restore-status');
       else restoreFromCSV(e.target.result);
-    } catch(err) { showStatus('restore-status',`❌ 還原失敗：${err.message}`,'error'); }
+    } catch(err) { showStatus('restore-status',`❌ 還原失敗：${escHtml(err.message)}`,'error'); }
   };
   reader.readAsText(file,'UTF-8'); input.value='';
 }
@@ -1764,12 +1764,14 @@ function restoreFromJSON(text, statusId) {
   const ex=loadWords(); const exSet=new Set(ex.map(w=>w.word.toLowerCase()));
   let added=0, skipped=0;
   for (const w of inc) {
-    if (!w.word) continue;
+    if (!w || typeof w!=='object' || typeof w.word!=='string' || !w.word.trim()) continue;
+    const _s=x=>typeof x==='string'?x:'';
+    const _ec=Number(w.errorCount);
     const word=normalizeWordCase(w.word.trim());
     if (exSet.has(word.toLowerCase())) { skipped++; continue; }
-    ex.push({word, tag:w.tag||'', resource:w.resource||'', chinese:w.chinese||'',
-      errorCount:w.errorCount||0, pronunciation:w.pronunciation||'',
-      pos:w.pos||'', audioUrl:w.audioUrl||'', imageUrl:w.imageUrl||''});
+    ex.push({word, tag:_s(w.tag), resource:_s(w.resource), chinese:_s(w.chinese),
+      errorCount:Number.isFinite(_ec)&&_ec>0?Math.floor(_ec):0, pronunciation:_s(w.pronunciation),
+      pos:_s(w.pos), audioUrl:_s(w.audioUrl), imageUrl:_s(w.imageUrl)});
     exSet.add(word.toLowerCase()); added++;
   }
   saveWords(ex);
@@ -1792,7 +1794,7 @@ function restoreFromCSV(text) {
     const word=(r[ic>=0?ic:0]||'').trim(); if(!word) continue;
     if (exSet.has(word.toLowerCase())) { skipped++; continue; }
     ex.push({word, chinese:(r[zc>=0?zc:1]||'').trim(), resource:(r[rc>=0?rc:2]||'').trim(),
-      tag:(r[tc>=0?tc:3]||'').trim(), errorCount:Number(r[ec>=0?ec:4]||0),
+      tag:(r[tc>=0?tc:3]||'').trim(), errorCount:(n=>Number.isFinite(n)&&n>0?Math.floor(n):0)(Number(r[ec>=0?ec:4]||0)),
       pronunciation:'', pos:'', audioUrl:'', imageUrl:(r[imgc>=0?imgc:5]||'').trim()});
     exSet.add(word.toLowerCase()); added++;
   }
@@ -1871,7 +1873,7 @@ function renderBankResourceFilter() {
   const noChip=noTag?`<span class="resource-chip ${bankSelRes.has('__notag__')?'active':''}"
     style="border-style:dashed;" onclick="bankToggleRes('__notag__')">無標籤<span class="chip-count">${noTag}</span></span>`:'';
   el.innerHTML=res.map(r=>`<span class="resource-chip ${bankSelRes.has(r)?'active':''}"
-    onclick="bankToggleRes('${escJs(r)}')">${escHtml(r)}<span class="chip-count">${counts[r]||0}</span></span>`
+    onclick="bankToggleRes('${escHtml(escJs(r))}')">${escHtml(r)}<span class="chip-count">${counts[r]||0}</span></span>`
   ).join('')+noChip;
 }
 function bankToggleRes(r) {
@@ -1916,11 +1918,11 @@ function renderBank() {
           ${_wp?`<div class="bank-pron">/${escHtml(_wp)}/</div>`:''}
           <div class="bank-zh">${escHtml(w.chinese||'（尚未翻譯）')}</div>
           ${res?`<div style="margin-top:4px;">${res}</div>`:''}
-          ${w.errorCount?`<div class="bank-err">❌ 錯 ${w.errorCount} 次</div>`:''}
+          ${w.errorCount?`<div class="bank-err">❌ 錯 ${Number(w.errorCount)||0} 次</div>`:''}
         </div>
         <div class="bank-actions">
-          <button class="btn-icon" onclick="speak('${escJs(w.word)}','${escJs(w.audioUrl||'')}')">🔊</button>
-          <button class="btn-icon" onclick="confirmDeleteWord('${escJs(w.word)}')" style="background:var(--red-lt);border-color:var(--red);">🗑</button>
+          <button class="btn-icon" onclick="speak('${escHtml(escJs(w.word))}','${escHtml(escJs(w.audioUrl||''))}')">🔊</button>
+          <button class="btn-icon" onclick="confirmDeleteWord('${escHtml(escJs(w.word))}')" style="background:var(--red-lt);border-color:var(--red);">🗑</button>
         </div>
       </div>`;
   }).join('');

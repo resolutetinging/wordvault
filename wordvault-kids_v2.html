@@ -1111,7 +1111,7 @@ function escHtml(s) {
   return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 function escJs(s) {
-  return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"').replace(/\n/g,'\\n');
+  return String(s||'').replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/"/g,'\\"').replace(/\n/g,'\\n').replace(/\r/g,'\\r').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029');
 }
 function shuffle(arr) {
   for (let i = arr.length - 1; i > 0; i--) {
@@ -1216,10 +1216,10 @@ function handleImportFile(input) {
     const text = e.target.result;
     if (file.name.endsWith('.json')) {
       try { restoreFromJSON(text, 'import-status'); }
-      catch(err) { showStatus('import-status', `❌ JSON 格式錯誤：${err.message}`, 'error'); }
+      catch(err) { showStatus('import-status', `❌ JSON 格式錯誤：${escHtml(err.message)}`, 'error'); }
     } else {
       document.getElementById('import-input').value = text;
-      showStatus('import-status', `📂 已載入「${file.name}」，點「匯入」繼續`, 'info');
+      showStatus('import-status', `📂 已載入「${escHtml(file.name)}」，點「匯入」繼續`, 'info');
     }
   };
   reader.readAsText(file, 'UTF-8');
@@ -1501,7 +1501,7 @@ async function batchTranslate() {
       showStatus('translate-status','⚠️ 翻譯完成但未更新任何單字，請確認 API Key 正確且單字庫有未翻譯的單字','error');
     }
   } catch(err) {
-    showStatus('translate-status',`❌ 錯誤：${err.message}（請確認 API Key 正確、網路正常）`,'error');
+    showStatus('translate-status',`❌ 錯誤：${escHtml(err.message)}（請確認 API Key 正確、網路正常）`,'error');
   } finally {
     btn.innerHTML='✨ 開始 AI 翻譯'; btn.disabled=false; updateGlobalCount();
   }
@@ -1627,7 +1627,7 @@ function renderStudyResourceFilter() {
   const noTag=noTagCount?`<span class="resource-chip ${studySelectedResources.has('__notag__')?'active':''}"
     style="border-style:dashed;" onclick="studyToggleRes('__notag__')">無標籤<span class="chip-count">${noTagCount}</span></span>`:'';
   el.innerHTML=resources.map(r=>`<span class="resource-chip ${studySelectedResources.has(r)?'active':''}"
-    onclick="studyToggleRes('${escJs(r)}')">${escHtml(r)}<span class="chip-count">${counts[r]||0}</span></span>`
+    onclick="studyToggleRes('${escHtml(escJs(r))}')">${escHtml(r)}<span class="chip-count">${counts[r]||0}</span></span>`
   ).join('')+noTag;
 }
 function studyToggleRes(res) {
@@ -1812,7 +1812,7 @@ function renderQuizResourceFilter() {
   const noChip=noTag?`<span class="resource-chip ${quizSelRes.has('__notag__')?'active':''}"
     style="border-style:dashed;" onclick="quizToggleRes('__notag__')">無標籤<span class="chip-count">${noTag}</span></span>`:'';
   el.innerHTML=res.map(r=>`<span class="resource-chip ${quizSelRes.has(r)?'active':''}"
-    onclick="quizToggleRes('${escJs(r)}')">${escHtml(r)}<span class="chip-count">${counts[r]||0}</span></span>`
+    onclick="quizToggleRes('${escHtml(escJs(r))}')">${escHtml(r)}<span class="chip-count">${counts[r]||0}</span></span>`
   ).join('')+noChip;
 }
 function quizToggleRes(r) {
@@ -1914,7 +1914,7 @@ function renderQuestion() {
   document.getElementById('quiz-q').textContent = question;
   document.getElementById('quiz-choices').innerHTML = choices.map(c=>`
     <button class="choice-btn"
-      onclick="answerQuiz(this,'${escJs(c)}','${escJs(correctAns)}','${escJs(cur.word)}')">
+      onclick="answerQuiz(this,'${escHtml(escJs(c))}','${escHtml(escJs(correctAns))}','${escHtml(escJs(cur.word))}')">
       ${escHtml(c)}
     </button>`).join('');
 }
@@ -2001,9 +2001,9 @@ function showResults() {
 
   const kidForStar = curKidId ? loadProfiles().find(p=>p.id===curKidId) : null;
   const thresholdLine = kidForStar
-    ? `<div class="result-stat"><span>集點門檻</span><span class="result-val" style="font-size:15px">${kidForStar.threshold??80}%</span></div>` : '';
+    ? `<div class="result-stat"><span>集點門檻</span><span class="result-val" style="font-size:15px">${Number(kidForStar.threshold)||80}%</span></div>` : '';
   const starLine = _earnedStar
-    ? `<div style="text-align:center;margin:10px 0;font-size:16px;font-weight:800;color:var(--orange-dk);background:var(--yellow-lt);border-radius:12px;padding:10px">⭐ +1 集點！（已累積 ${kidForStar?.stars3||0} 點）</div>` : '';
+    ? `<div style="text-align:center;margin:10px 0;font-size:16px;font-weight:800;color:var(--orange-dk);background:var(--yellow-lt);border-radius:12px;padding:10px">⭐ +1 集點！（已累積 ${Number(kidForStar?.stars3)||0} 點）</div>` : '';
   document.getElementById('result-stats').innerHTML = `
     <div class="result-stat"><span>作答題數</span><span class="result-val">${total}</span></div>
     <div class="result-stat"><span>答對</span><span class="result-val good">${correct}</span></div>
@@ -2023,7 +2023,7 @@ function showResults() {
           <div class="wrong-en">${escHtml(w.word)}</div>
           <div class="wrong-zh">${escHtml(w.chinese||'')}</div>
         </div>
-        <button class="btn-icon" onclick="speak('${escJs(w.word)}','${escJs(w.audioUrl||'')}')">🔊</button>
+        <button class="btn-icon" onclick="speak('${escHtml(escJs(w.word))}','${escHtml(escJs(w.audioUrl||''))}')">🔊</button>
       </div>`).join('');
     studyWords=unique;
   } else {
@@ -2094,7 +2094,7 @@ function restoreBackup(input) {
     try {
       if (file.name.endsWith('.json')) restoreFromJSON(e.target.result,'restore-status');
       else restoreFromCSV(e.target.result);
-    } catch(err) { showStatus('restore-status',`❌ 還原失敗：${err.message}`,'error'); }
+    } catch(err) { showStatus('restore-status',`❌ 還原失敗：${escHtml(err.message)}`,'error'); }
   };
   reader.readAsText(file,'UTF-8'); input.value='';
 }
@@ -2106,12 +2106,14 @@ function restoreFromJSON(text, statusId) {
   const ex=loadWords(); const exSet=new Set(ex.map(w=>w.word.toLowerCase()));
   let added=0, skipped=0;
   for (const w of inc) {
-    if (!w.word) continue;
+    if (!w || typeof w!=='object' || typeof w.word!=='string' || !w.word.trim()) continue;
+    const _s=x=>typeof x==='string'?x:'';
+    const _ec=Number(w.errorCount);
     const word=normalizeWordCase(w.word.trim());
     if (exSet.has(word.toLowerCase())) { skipped++; continue; }
-    ex.push({word, tag:w.tag||'', resource:w.resource||'', chinese:w.chinese||'',
-      errorCount:w.errorCount||0, pronunciation:w.pronunciation||'',
-      pos:w.pos||'', audioUrl:w.audioUrl||'', imageUrl:w.imageUrl||''});
+    ex.push({word, tag:_s(w.tag), resource:_s(w.resource), chinese:_s(w.chinese),
+      errorCount:Number.isFinite(_ec)&&_ec>0?Math.floor(_ec):0, pronunciation:_s(w.pronunciation),
+      pos:_s(w.pos), audioUrl:_s(w.audioUrl), imageUrl:_s(w.imageUrl)});
     exSet.add(word.toLowerCase()); added++;
   }
   saveWords(ex);
@@ -2134,7 +2136,7 @@ function restoreFromCSV(text) {
     const word=(r[ic>=0?ic:0]||'').trim(); if(!word) continue;
     if (exSet.has(word.toLowerCase())) { skipped++; continue; }
     ex.push({word, chinese:(r[zc>=0?zc:1]||'').trim(), resource:(r[rc>=0?rc:2]||'').trim(),
-      tag:(r[tc>=0?tc:3]||'').trim(), errorCount:Number(r[ec>=0?ec:4]||0),
+      tag:(r[tc>=0?tc:3]||'').trim(), errorCount:(n=>Number.isFinite(n)&&n>0?Math.floor(n):0)(Number(r[ec>=0?ec:4]||0)),
       pronunciation:'', pos:'', audioUrl:'', imageUrl:(r[imgc>=0?imgc:5]||'').trim()});
     exSet.add(word.toLowerCase()); added++;
   }
@@ -2212,7 +2214,7 @@ function renderBankResourceFilter() {
   const noChip=noTag?`<span class="resource-chip ${bankSelRes.has('__notag__')?'active':''}"
     style="border-style:dashed;" onclick="bankToggleRes('__notag__')">無標籤<span class="chip-count">${noTag}</span></span>`:'';
   el.innerHTML=res.map(r=>`<span class="resource-chip ${bankSelRes.has(r)?'active':''}"
-    onclick="bankToggleRes('${escJs(r)}')">${escHtml(r)}<span class="chip-count">${counts[r]||0}</span></span>`
+    onclick="bankToggleRes('${escHtml(escJs(r))}')">${escHtml(r)}<span class="chip-count">${counts[r]||0}</span></span>`
   ).join('')+noChip;
 }
 function bankToggleRes(r) {
@@ -2267,14 +2269,14 @@ function renderBank() {
           ${defHtml}
           ${exHtml}
           ${res?`<div style="margin-top:6px;">${res}</div>`:''}
-          ${w.errorCount?`<div class="bank-err">❌ 錯 ${w.errorCount} 次</div>`:''}
+          ${w.errorCount?`<div class="bank-err">❌ 錯 ${Number(w.errorCount)||0} 次</div>`:''}
         </div>
         <div class="bank-actions">
-          <button class="btn-icon" onclick="speak('${escJs(w.word)}','${escJs(w.audioUrl||'')}')">🔊</button>
-          <button class="btn-icon" onclick="openEnEditor('${escJs(w.word)}')" title="編輯英文">Aa</button>
-          <button class="btn-icon" onclick="openZhEditor('${escJs(w.word)}')" title="編輯中文">✏️</button>
-          <button class="btn-icon" onclick="openExEditor('${escJs(w.word)}')" title="編輯例句">📝</button>
-          <button class="btn-icon" onclick="confirmDeleteWord('${escJs(w.word)}')" style="background:var(--red-lt);border-color:var(--red);">🗑</button>
+          <button class="btn-icon" onclick="speak('${escHtml(escJs(w.word))}','${escHtml(escJs(w.audioUrl||''))}')">🔊</button>
+          <button class="btn-icon" onclick="openEnEditor('${escHtml(escJs(w.word))}')" title="編輯英文">Aa</button>
+          <button class="btn-icon" onclick="openZhEditor('${escHtml(escJs(w.word))}')" title="編輯中文">✏️</button>
+          <button class="btn-icon" onclick="openExEditor('${escHtml(escJs(w.word))}')" title="編輯例句">📝</button>
+          <button class="btn-icon" onclick="confirmDeleteWord('${escHtml(escJs(w.word))}')" style="background:var(--red-lt);border-color:var(--red);">🗑</button>
         </div>
       </div>`;
   }).join('');
@@ -2483,9 +2485,9 @@ function renderKidSelector() {
   const bar = document.getElementById('kid-bar');
   if (!bar) return;
   const chips = profiles.map(p => `
-    <button class="kid-chip ${p.id===curKidId?'active':''}" onclick="selectKid('${escJs(p.id)}')">
+    <button class="kid-chip ${p.id===curKidId?'active':''}" onclick="selectKid('${escHtml(escJs(p.id))}')">
       ${escHtml(p.name)}
-      <span class="kid-chip-stars">⭐ ${p.stars3||0}</span>
+      <span class="kid-chip-stars">⭐ ${Number(p.stars3)||0}</span>
     </button>`).join('');
   bar.innerHTML = chips +
     `<button class="kid-add-chip" onclick="showAddKidDialog()">＋ 新增</button>`;
@@ -2684,7 +2686,7 @@ function renderAlbum() {
     const own=kid.stickers.find(x=>x.id===s.id);
     const dateStr=own?new Date(own.ts).toLocaleDateString('zh-TW',{month:'numeric',day:'numeric'}):'';
     return `<div class="s-cell ${isOwned?'unlocked':'locked'}">
-      <span class="s-cell-em">${s.emoji}</span>
+      <span class="s-cell-em">${escHtml(s.emoji)}</span>
       <div class="s-cell-lbl">${escHtml(s.label)}${isOwned&&dateStr?`<br><span style="font-size:9.5px;opacity:.7">${dateStr}解鎖</span>`:''}${!isOwned?'<br><span style="font-size:9.5px">🔒 未解鎖</span>':''}</div>
     </div>`;
   }).join('');
@@ -2716,16 +2718,16 @@ function renderStickersScreen() {
     const pct = Math.round(owned.size / pool.length * 100);
     const miniCells = pool.map(s => {
       const is = owned.has(s.id);
-      return `<div class="sticker-mini-cell ${is?'':'locked'}" title="${escHtml(s.label)}">${s.emoji}</div>`;
+      return `<div class="sticker-mini-cell ${is?'':'locked'}" title="${escHtml(s.label)}">${escHtml(s.emoji)}</div>`;
     }).join('');
     return `
       <div class="sticker-kid-card">
         <div class="sticker-kid-hd">
           <div class="sticker-kid-name">${escHtml(kid.name)}</div>
-          <button class="btn-icon" title="查看全部貼紙" onclick="curKidId='${escJs(kid.id)}';renderKidSelector();showStickerAlbum()" style="font-size:16px;width:36px;height:36px;">🗂</button>
+          <button class="btn-icon" title="查看全部貼紙" onclick="curKidId='${escHtml(escJs(kid.id))}';renderKidSelector();showStickerAlbum()" style="font-size:16px;width:36px;height:36px;">🗂</button>
         </div>
         <div class="sticker-kid-stats">
-          <span class="sticker-stat-pill">⭐ ${kid.stars3||0} 次跟讀</span>
+          <span class="sticker-stat-pill">⭐ ${Number(kid.stars3)||0} 次跟讀</span>
           <span class="sticker-stat-pill">🗂 ${owned.size}/${pool.length} 張 (${pct}%)</span>
         </div>
         <div class="sticker-mini-grid">${miniCells}</div>
@@ -2847,9 +2849,9 @@ function renderThresholdSettings(profiles) {
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;font-size:13px;font-weight:600;color:var(--ink)">
           <span style="min-width:56px;font-weight:800">${escHtml(kid.name)}</span>
           <span>答對</span>
-          <input type="number" min="1" max="100" value="${kid.threshold??80}"
+          <input type="number" min="1" max="100" value="${Number(kid.threshold)||80}"
             style="width:58px;font-size:14px;text-align:center;padding:4px 6px;border:1.5px solid var(--border);border-radius:8px;font-weight:700;"
-            onchange="saveThreshold('${escJs(kid.id)}',this.value)" />
+            onchange="saveThreshold('${escHtml(escJs(kid.id))}',this.value)" />
           <span>% 以上可集點</span>
         </div>`).join('')}
     </div>`;
@@ -2899,7 +2901,7 @@ function renderAnalytics() {
         <div style="font-size:11px;font-weight:800;color:var(--ink2);text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px">高頻錯誤 Top 5</div>
         ${topErrors.map(w=>`<div class="err-word-row">
           <div><div style="font-size:15px;font-weight:800">${escHtml(w.word)}</div><div style="font-size:12px;color:var(--ink2)">${escHtml(w.chinese||'')}</div></div>
-          <div style="font-size:13px;font-weight:700;color:var(--red)">錯 ${w.errorCount} 次</div></div>`).join('')}`:''}
+          <div style="font-size:13px;font-weight:700;color:var(--red)">錯 ${Number(w.errorCount)||0} 次</div></div>`).join('')}`:''}
     </div>`;
   }
 
@@ -2907,10 +2909,10 @@ function renderAnalytics() {
     const log=kid.quizLog||[];
     const avgAcc=log.length?Math.round(log.reduce((s,l)=>s+(l.pct||0),0)/log.length):null;
     const recent5=log.slice(-5);
-    const trend=recent5.map(l=>`<span style="display:inline-block;background:${l.pct>=(kid.threshold??80)?'var(--green-lt)':'var(--red-lt)'};color:${l.pct>=(kid.threshold??80)?'var(--green-dk)':'var(--red)'};border-radius:6px;padding:2px 6px;font-size:11px;font-weight:700">${l.pct}%</span>`).join(' ');
+    const trend=recent5.map(l=>`<span style="display:inline-block;background:${l.pct>=(kid.threshold??80)?'var(--green-lt)':'var(--red-lt)'};color:${l.pct>=(kid.threshold??80)?'var(--green-dk)':'var(--red)'};border-radius:6px;padding:2px 6px;font-size:11px;font-weight:700">${Number(l.pct)||0}%</span>`).join(' ');
     html+=`<div style="margin-bottom:18px;padding-bottom:16px;border-bottom:2px solid var(--border)">
       <div style="font-size:17px;font-weight:900;margin-bottom:8px">${escHtml(kid.name)}</div>
-      <div style="font-size:12px;color:var(--ink2);font-weight:700;margin-bottom:10px">⭐ 累積集點 ${kid.stars3||0} 點 &nbsp;·&nbsp; 🗂 貼紙 ${(kid.stickers||[]).length} 張</div>`;
+      <div style="font-size:12px;color:var(--ink2);font-weight:700;margin-bottom:10px">⭐ 累積集點 ${Number(kid.stars3)||0} 點 &nbsp;·&nbsp; 🗂 貼紙 ${(kid.stickers||[]).length} 張</div>`;
     if(avgAcc!==null){
       html+=`<div style="margin-bottom:10px">
         <div style="font-size:12px;color:var(--ink2);font-weight:700;margin-bottom:4px">闖關平均正確率（共 ${log.length} 次）</div>
