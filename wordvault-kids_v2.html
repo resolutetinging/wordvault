@@ -2676,7 +2676,7 @@ function renderAlbum() {
   const kidPool=getKidPool(kid);
   const owned=new Set(kid.stickers.map(s=>s.id));
   const pct=Math.round(owned.size/kidPool.length*100);
-  document.getElementById('album-kid-name').textContent=`${escHtml(kid.name)} 的貼紙冊`;
+  document.getElementById('album-kid-name').textContent=`${kid.name} 的貼紙冊`;
   const targetLine = kid.target ? `<div style="font-size:12px;color:var(--orange-dk);font-weight:700;margin-top:2px">🎯 ${escHtml(kid.target)}</div>` : '';
   document.getElementById('album-kid-count').innerHTML=`已解鎖 ${owned.size} / ${kidPool.length} 張${targetLine}`;
   document.getElementById('album-prog-fill').style.width=pct+'%';

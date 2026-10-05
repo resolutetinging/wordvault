@@ -2753,7 +2753,8 @@ function escHtml(str) {
 function escJs(str) {
   return String(str || '')
     .replace(/\\/g,'\\\\').replace(/'/g,"\\'")
-    .replace(/"/g,'\\"').replace(/\n/g,'\\n');
+    .replace(/"/g,'\\"').replace(/\n/g,'\\n')
+    .replace(/\r/g,'\\r').replace(/ /g,'\\u2028').replace(/ /g,'\\u2029');
 }
 
 // ═══════════════════════════════════════════
