@@ -880,6 +880,7 @@
       <input type="text" id="bank-search" placeholder="🔍 搜尋單字 / 中文…" oninput="renderBank()" />
       <button class="btn btn-outline btn-sm" onclick="confirmDeleteSearchResults()" title="刪除搜尋結果">🗑</button>
     </div>
+    <div id="bank-incomplete-filter" class="tag-filter-row" style="margin-bottom:4px;"></div>
     <div id="bank-resource-filter" class="tag-filter-row" style="margin-bottom:8px;display:none;"></div>
     <div id="bank-action-bar" style="display:none;margin-bottom:12px;">
       <button class="btn btn-danger btn-sm" onclick="confirmDeleteByResource()" id="delete-resource-btn">
@@ -2291,6 +2292,24 @@ function resetQuiz() {
 //  WORD BANK
 // ═══════════════════════════════════════════
 let bankSelectedResources = new Set();
+// 10-05：單字庫「資料不完整」篩選（判斷沿用 isIncomplete：缺中文、缺詞性，或非片語缺音標）
+let bankIncompleteOnly = false;
+function renderBankIncompleteFilter() {
+  const el = document.getElementById('bank-incomplete-filter');
+  if (!el) return;
+  const n = loadWords().filter(w => w && w.word && isIncomplete(w)).length;
+  if (n === 0 && bankIncompleteOnly) bankIncompleteOnly = false;
+  el.innerHTML = `<span class="resource-chip ${bankIncompleteOnly ? 'active' : ''}"
+      style="border-style:dashed;${n === 0 ? 'opacity:0.45;cursor:default;' : ''}"
+      title="缺中文、缺詞性，或非片語缺音標的單字；可與來源篩選、搜尋一起使用"
+      onclick="${n === 0 ? '' : 'bankToggleIncomplete()'}">⚠ 資料不完整<span class="chip-count">${n}</span></span>`;
+}
+function bankToggleIncomplete() {
+  bankIncompleteOnly = !bankIncompleteOnly;
+  bankPage = 0;
+  renderBankIncompleteFilter();
+  renderBank();
+}
 
 function renderBankResourceFilter() {
   const allWords   = loadWords();   // single load
@@ -2374,7 +2393,8 @@ function renderBank() {
   }
 
   const q = (document.getElementById('bank-search')?.value || '').toLowerCase();
-  const hasFilter = bankSelectedResources.size > 0 || q.length > 0;
+  const hasFilter = bankSelectedResources.size > 0 || q.length > 0 || bankIncompleteOnly;
+  renderBankIncompleteFilter();
 
   // ── No filter: show prompt only, no cards ──
   if (!hasFilter) {
@@ -2389,6 +2409,7 @@ function renderBank() {
 
   try {
     let words = loadWords().filter(w => w && w.word);
+    if (bankIncompleteOnly) words = words.filter(isIncomplete);
 
     if (bankSelectedResources.size > 0) {
       if (bankSelectedResources.has('__notag__')) {
