@@ -2655,7 +2655,7 @@ function closeChest() { document.getElementById('chest-ov').classList.remove('sh
 //  v2: STICKER ALBUM
 // ══════════════════════════════════════════════════════
 function showStickerAlbum() {
-  closeKidMenu();
+  // 10-05：移除殘留的 closeKidMenu()（函式已於 06-03 a5ca5ac 刪除，這行讓貼紙冊按鈕整個失效）
   renderAlbum();
   document.getElementById('album-ov').classList.add('show');
 }
