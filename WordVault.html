@@ -1548,7 +1548,7 @@ async function batchTranslate() {
         const allW2 = loadWords();
         for (let fi = 0; fi < finalMissing.length; fi++) {
           const fw = finalMissing[fi];
-          showStatus('translate-status', `⏳ 逐字補翻譯 ${fi + 1} / ${finalMissing.length}：${escHtml(fw.word)}…`, 'info');
+          showStatus('translate-status', `⏳ 逐字補翻譯 ${fi + 1} / ${finalMissing.length}：${fw.word}…`, 'info');
           try {
             const singleData = await groqFetch({
               model: GROQ_PRIMARY_MODEL,

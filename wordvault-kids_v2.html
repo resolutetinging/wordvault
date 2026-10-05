@@ -2626,7 +2626,7 @@ let _pendingChestKid = null;
 function showTreasureChest(kid) {
   _pendingChestKid = kid;
   document.getElementById('chest-icon').textContent='🎁';
-  document.getElementById('chest-title').textContent=`🎁 ${escHtml(kid.name)}，恭喜！`;
+  document.getElementById('chest-title').textContent=`🎁 ${kid.name}，恭喜！`;
   document.getElementById('chest-sub').textContent=`已累積 ${kid.stars3} 個集點！點開寶箱看看得到什麼！`;
   document.getElementById('sticker-reveal-area').style.display='none';
   document.getElementById('chest-open-btn').style.display='block';
