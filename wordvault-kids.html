@@ -1223,8 +1223,15 @@ async function batchTranslate() {
 // ═══════════════════════════════════════════
 let speechRate = 1.0;
 
+function safeMediaUrl(u, kind) {
+  u = String(u || '').trim();
+  if (/^(https?:|blob:)/i.test(u)) return u;
+  if (kind === 'audio' ? /^data:audio\//i.test(u) : /^data:image\//i.test(u)) return u;
+  return '';
+}
 function speak(word, audioUrl, rate) {
   rate = rate || speechRate;
+  audioUrl = safeMediaUrl(audioUrl, 'audio');
   if (audioUrl) {
     const a = new Audio(audioUrl);
     a.playbackRate = rate;
@@ -1414,9 +1421,10 @@ function renderCard() {
   const scene=document.getElementById('flip-scene');
   const frontImg=document.getElementById('fc-front-img');
   const backImg=document.getElementById('fc-back-img');
-  if (w.imageUrl) {
-    frontImg.src=w.imageUrl; frontImg.style.display='block';
-    backImg.src=w.imageUrl;  backImg.style.display='block';
+  const safeImg = safeMediaUrl(w.imageUrl, 'image');
+  if (safeImg) {
+    frontImg.src=safeImg; frontImg.style.display='block';
+    backImg.src=safeImg;  backImg.style.display='block';
     scene.classList.add('has-image');
   } else {
     frontImg.style.display='none'; frontImg.src='';

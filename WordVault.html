@@ -1305,8 +1305,8 @@ async function batchTranslate() {
     const missing = words.filter(w => !String(w.chinese || '').trim());
     if (missing.length > 0) {
       showStatus('translate-status',
-        `⚠ 無待翻譯項目，但以下 ${missing.length} 個單字仍缺中文（可能格式異常）：<br>` +
-        missing.map(w => `<code>${escHtml(w.word)}</code>`).join('、'),
+        `⚠ 無待翻譯項目，但以下 ${missing.length} 個單字仍缺中文（可能格式異常）：` +
+        missing.map(w => w.word).join('、'),
         'info');
     } else {
       showStatus('translate-status', '所有單字都已有翻譯與詞性 ✓', 'success');
@@ -1582,8 +1582,8 @@ async function batchTranslate() {
         const stillFinal = loadWords().filter(isIncomplete);
         if (stillFinal.length > 0) {
           showStatus('translate-status',
-            `⚠ ${stillFinal.length} 個單字仍無法翻譯（可能為生僻詞或拼寫異常），請至單字庫手動補充：<br>` +
-            stillFinal.map(w => `<b>${escHtml(w.word)}</b>`).join('、'),
+            `⚠ ${stillFinal.length} 個單字仍無法翻譯（可能為生僻詞或拼寫異常），請至單字庫手動補充：` +
+            stillFinal.map(w => w.word).join('、'),
             'info');
         } else {
           showStatus('translate-status', `✅ 完成！處理 ${translated} 個單字（翻譯 + 補詞性）`, 'success');
