@@ -1813,8 +1813,24 @@ function toggleStudyStar(word, idx) {
   }
 }
 
+// 11-06：線上音檔全缺的字（如 conspiratorial）會等網路失敗後才走 synthesis，已脫離點擊手勢，
+// iOS Safari 會靜默擋掉。點擊當下先播一段空語音解鎖；本次已知無音檔的字直接同步 synthesis。
+const _noAudioWords = new Set();
+let _synthUnlocked = false;
+function _unlockSynthesis() {
+  if (_synthUnlocked || !('speechSynthesis' in window)) return;
+  try {
+    const u = new SpeechSynthesisUtterance(' ');
+    u.volume = 0;
+    window.speechSynthesis.speak(u);
+    _synthUnlocked = true;
+  } catch(e) {}
+}
+
 function speak(word, audioUrl) {
   try { window.speechSynthesis.cancel(); } catch(e) {}
+  if (!audioUrl && _noAudioWords.has(word.toLowerCase())) { _startSynthesis(word); return; }
+  _unlockSynthesis();
   if (audioUrl) {
     // 08-06：play()同步呼叫（不等canplaythrough事件）以保留使用者手勢，避免iOS Safari的
     // 自動播放限制擋掉非同步觸發的播放；但play().catch()不足以偵測所有失敗（字典API的
@@ -1861,7 +1877,8 @@ async function _fetchAndPlayAudio(word) {
     winner.a.play().catch(() => {});
     return;
   }
-  // 3. 所有管道失敗 → synthesis 最後保底
+  // 3. 所有管道失敗 → synthesis 最後保底（記下，下次點擊直接同步 synthesis）
+  _noAudioWords.add(w);
   _startSynthesis(word);
 }
 
