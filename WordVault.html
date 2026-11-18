@@ -948,7 +948,7 @@
 <!-- Word Compare Dialog -->
 <div class="overlay" id="compare-overlay" onclick="closeCompare()">
   <div class="dialog" onclick="event.stopPropagation()" style="max-width:420px;max-height:85vh;overflow-y:auto;">
-    <h3 style="margin-bottom:4px;">⚖️ 單字比較</h3>
+    <h3 style="margin-bottom:4px;display:flex;align-items:center;gap:8px;"><span aria-hidden="true" style="display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;background:var(--blue);color:#fff;font-size:10px;font-weight:700;letter-spacing:0.5px;">VS</span>單字比較</h3>
     <p style="font-size:12px;color:var(--ink2);margin-bottom:12px;">輸入 2–4 個單字或片語，用逗號或換行分隔</p>
     <input type="text" id="compare-input" placeholder="例：affect, effect"
            style="width:100%;margin-bottom:8px;"
@@ -2890,7 +2890,10 @@ function buildComparePrompt(list) {
     '(3) core 為核心意思一句話；nuance 說明語氣、正式度、搭配對象；' +
     'example 為一句自然的英文例句；example_zh 為其繁體中文翻譯。' +
     '(4) differences 為 2 至 4 點對照差異；tips 為 1 至 2 點怎麼選用的建議。' +
-    '(5) 只輸出 JSON，不要其他文字。';
+    '(5) 語言：chinese、core、nuance、example_zh、differences、tips 一律用繁體中文撰寫，' +
+    '只有被比較的英文單字本身可以保留英文原文（例：「archetype 偏抽象概念」），' +
+    '不得整句寫英文；example 是唯一用英文的欄位。' +
+    '(6) 只輸出 JSON，不要其他文字。';
   return [
     { role: 'system', content: sys },
     { role: 'user', content: list.join('\n') }
@@ -2917,9 +2920,17 @@ function parseCompareResult(content) {
   };
 }
 
+// 11-18：某欄位（core／nuance／differences／tips）完全沒有中文字＝整句寫英文
+function compareHasEnglishOnly(res) {
+  const cjk = /[\u3400-\u9fff]/;
+  const bad = t => typeof t === 'string' && t.trim() && !cjk.test(t);
+  return res.words.some(w => bad(w.core) || bad(w.nuance)) ||
+    res.differences.some(bad) || res.tips.some(bad);
+}
+
 function renderCompareResult(res, knownWords) {
   const known = new Set((knownWords || []).map(w => String(w && w.word || '').trim().toLowerCase()));
-  const li = (label, v) => v ? '<li>' + label + escHtml(v) + '</li>' : '';
+  const li = (label, v) => v ? '<li><b style="color:var(--ink);">' + label + '</b>' + escHtml(v) + '</li>' : '';
   let h = '';
   res.words.forEach(w => {
     const tag = known.has(w.word.trim().toLowerCase())
@@ -2975,6 +2986,16 @@ async function runCompare() {
     const content = data && data.choices && data.choices[0] && data.choices[0].message
       ? data.choices[0].message.content : '';
     let res = parseCompareResult(content);
+    // 11-18：LLM 偶爾把 differences／tips 整段寫英文（輸入是英文時），程式檢查後重問一次
+    if (res && compareHasEnglishOnly(res)) {
+      const msgs = buildComparePrompt(list);
+      msgs[0].content += '【重要】上一次回覆有欄位整句寫英文，違反語言規定；這次除 example 外每個欄位都必須是繁體中文句子。';
+      const data2 = await compareGroqFetch({ model: GROQ_PRIMARY_MODEL, temperature: 0.2, max_tokens: 1800,
+        reasoning_effort: 'low', response_format: { type: 'json_object' }, messages: msgs }, apiKey);
+      const c2 = data2 && data2.choices && data2.choices[0] && data2.choices[0].message ? data2.choices[0].message.content : '';
+      const res2 = parseCompareResult(c2);
+      if (res2 && !compareHasEnglishOnly(res2)) res = res2;
+    }
     if (res && typeof s2tDeep === 'function') res = s2tDeep(res);
     if (!res) { msg.textContent = '解析失敗，請再試一次'; }
     else { out.innerHTML = renderCompareResult(res, loadWords()); }
