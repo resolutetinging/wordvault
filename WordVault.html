@@ -49,6 +49,21 @@
       justify-content: space-between;
     }
 
+    .compare-btn {
+      flex: 0 0 34px;
+      width: 34px; height: 34px;
+      border-radius: 50%;
+      border: 1px solid rgba(255,255,255,0.35);
+      background: rgba(255,255,255,0.18);
+      color: #fff;
+      font-size: 16px;
+      line-height: 1;
+      cursor: pointer;
+      padding: 0;
+      margin-left: 12px;
+    }
+    .compare-btn:active { background: rgba(255,255,255,0.3); }
+
     .app-title {
       font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", sans-serif;
       font-size: 20px;
@@ -559,6 +574,7 @@
       <div class="app-title">📖 WordVault</div>
       <div class="word-count-badge" id="global-count">載入中…</div>
     </div>
+    <button class="compare-btn" onclick="openCompare()" title="單字比較" aria-label="單字比較">⚖️</button>
   </div>
   <nav class="nav">
     <button class="nav-btn active" onclick="showScreen('import', this)">📥 匯入</button>
@@ -924,6 +940,23 @@
       <button class="btn btn-primary" onclick="saveTagEditor()">儲存</button>
       <button class="btn btn-outline" onclick="closeTagEditor()">取消</button>
     </div>
+  </div>
+</div>
+
+<!-- Word Compare Dialog -->
+<div class="overlay" id="compare-overlay" onclick="closeCompare()">
+  <div class="dialog" onclick="event.stopPropagation()" style="max-width:420px;max-height:85vh;overflow-y:auto;">
+    <h3 style="margin-bottom:4px;">⚖️ 單字比較</h3>
+    <p style="font-size:12px;color:var(--ink2);margin-bottom:12px;">輸入 2–4 個單字或片語，用逗號或換行分隔</p>
+    <input type="text" id="compare-input" placeholder="例：affect, effect"
+           style="width:100%;margin-bottom:8px;"
+           onkeydown="if(event.key==='Enter')runCompare()" />
+    <div id="compare-msg" style="font-size:12px;color:var(--red);min-height:16px;margin-bottom:8px;"></div>
+    <div class="btn-row" style="margin-top:0;margin-bottom:14px;">
+      <button class="btn btn-primary" id="compare-run-btn" onclick="runCompare()">比較</button>
+      <button class="btn btn-outline" onclick="closeCompare()">關閉</button>
+    </div>
+    <div id="compare-result"></div>
   </div>
 </div>
 
@@ -2765,6 +2798,191 @@ function escHtml(str) {
   return String(str || '')
     .replace(/&/g,'&amp;').replace(/</g,'&lt;')
     .replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+
+// ═══════════════════════════════════════════
+//  單字比較（Groq）：頁首圓形按鈕 → 小視窗
+//  不寫入任何 localStorage；groqFetch 因閉包 apiKey/translated 不搬移，另寫頂層版本
+// ═══════════════════════════════════════════
+function parseCompareInput(raw) {
+  const seen = new Set();
+  const out = [];
+  String(raw || '').split(/[,，、;；\n\r]+/).forEach(p => {
+    const w = p.trim().replace(/\s+/g, ' ');
+    if (!w) return;
+    const k = w.toLowerCase();
+    if (seen.has(k)) return;
+    seen.add(k);
+    out.push(w);
+  });
+  return out;
+}
+
+function validateCompareWords(list) {
+  if (list.length < 2) return '請至少輸入 2 個單字或片語';
+  if (list.length > 4) return '最多只能比較 4 個，請減少數量';
+  if (list.some(w => w.length > 40)) return '單個單字或片語不可超過 40 字元';
+  return '';
+}
+
+// 頂層共用呼叫：429 重試、length 放大重試、primary 故障換 backup
+async function compareGroqOnce(body, apiKey, fetchFn, sleepFn) {
+  const url = 'https://api.groq.com/openai/v1/chat/completions';
+  const MAX_RETRIES = 4;
+  const mk = b => ({
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'Authorization': 'Bearer ' + apiKey },
+    body: JSON.stringify(b)
+  });
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const resp = await fetchFn(url, mk(body));
+    if (resp.status === 429) {
+      const err = await resp.json().catch(() => ({}));
+      const m = (err.error && err.error.message || '').match(/try again in ([\d.]+)s/i);
+      const waitMs = m ? Math.ceil(parseFloat(m[1]) * 1000) + 500 : (attempt + 1) * 12000;
+      await sleepFn(waitMs);
+      continue;
+    }
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({}));
+      const detail = (err.error && err.error.message) || '';
+      const e = new Error(detail || ('Groq API 錯誤 ' + resp.status));
+      e.status = resp.status;
+      e.detail = detail;
+      throw e;
+    }
+    let data = await resp.json();
+    const choice = data.choices && data.choices[0];
+    if (choice && choice.finish_reason === 'length') {
+      const r2 = await fetchFn(url, mk({ ...body, max_tokens: Math.round((body.max_tokens || 1800) * 1.8) }));
+      if (r2.ok) data = await r2.json();
+    }
+    return data;
+  }
+  throw new Error('重試多次仍失敗，請稍後再試');
+}
+
+async function compareGroqFetch(body, apiKey, fetchFn, sleepFn) {
+  fetchFn = fetchFn || ((u, o) => fetch(u, o));
+  sleepFn = sleepFn || (ms => new Promise(r => setTimeout(r, ms)));
+  try {
+    return await compareGroqOnce(body, apiKey, fetchFn, sleepFn);
+  } catch (e) {
+    if (_groqModelLooksDown(e) && body.model !== GROQ_BACKUP_MODEL) {
+      return await compareGroqOnce({ ...body, model: GROQ_BACKUP_MODEL }, apiKey, fetchFn, sleepFn);
+    }
+    throw e;
+  }
+}
+
+function buildComparePrompt(list) {
+  const sys =
+    '你是英文字典與用法比較助理。【語言規定】所有中文輸出必須使用繁體中文（台灣用語），' +
+    '絕對禁止簡體中文，嚴禁日文（含漢字新字體與假名）。' +
+    '輸入是使用者輸入的 2 至 4 個英文單字或片語，請比較它們的差異。' +
+    '只輸出 JSON，格式：{"words":[{"word","pos","chinese","core","nuance","example","example_zh"}],' +
+    '"differences":["..."],"tips":["..."]}。規則：' +
+    '(1) words 與輸入順序、數量一致，word 必須與輸入逐字相同，不得修正拼字或改變任何字元；' +
+    '若疑似拼字錯誤，仍照字解釋，並在 nuance 註明疑似拼字錯誤。' +
+    '(2) pos 為詞性縮寫（n./v./adj./adv./phrase）；chinese 為簡短繁體中文意思。' +
+    '(3) core 為核心意思一句話；nuance 說明語氣、正式度、搭配對象；' +
+    'example 為一句自然的英文例句；example_zh 為其繁體中文翻譯。' +
+    '(4) differences 為 2 至 4 點對照差異；tips 為 1 至 2 點怎麼選用的建議。' +
+    '(5) 只輸出 JSON，不要其他文字。';
+  return [
+    { role: 'system', content: sys },
+    { role: 'user', content: list.join('\n') }
+  ];
+}
+
+function parseCompareResult(content) {
+  let obj = null;
+  const txt = String(content || '').trim();
+  try { obj = JSON.parse(txt); }
+  catch (e) {
+    try { obj = JSON.parse(repairJSON(txt)); } catch (e2) { obj = null; }
+  }
+  if (!obj || typeof obj !== 'object' || !Array.isArray(obj.words) || !obj.words.length) return null;
+  const str = v => (typeof v === 'string' || typeof v === 'number') ? String(v) : '';
+  const arr = v => Array.isArray(v) ? v.map(str).filter(Boolean) : [];
+  return {
+    words: obj.words.filter(w => w && typeof w === 'object').map(w => ({
+      word: str(w.word), pos: str(w.pos), chinese: str(w.chinese), core: str(w.core),
+      nuance: str(w.nuance), example: str(w.example), example_zh: str(w.example_zh)
+    })).filter(w => w.word),
+    differences: arr(obj.differences),
+    tips: arr(obj.tips)
+  };
+}
+
+function renderCompareResult(res, knownWords) {
+  const known = new Set((knownWords || []).map(w => String(w && w.word || '').trim().toLowerCase()));
+  const li = (label, v) => v ? '<li>' + label + escHtml(v) + '</li>' : '';
+  let h = '';
+  res.words.forEach(w => {
+    const tag = known.has(w.word.trim().toLowerCase())
+      ? ' <span style="font-size:11px;background:var(--surface2,#eee);color:var(--ink2);border-radius:8px;padding:1px 6px;">已收錄</span>' : '';
+    h += '<div style="margin-bottom:12px;">' +
+      '<div style="font-size:13px;word-break:break-word;"><b>' + escHtml(w.word) + '</b> ' +
+      escHtml(w.pos) + ' ' + escHtml(w.chinese) + tag + '</div>' +
+      '<ul style="margin:4px 0 0 18px;font-size:13px;color:var(--ink2);word-break:break-word;">' +
+      li('核心：', w.core) + li('語感：', w.nuance) + li('例句：', w.example) + li('中譯：', w.example_zh) +
+      '</ul></div>';
+  });
+  const sec = (title, items) => items.length
+    ? '<div style="font-size:13px;font-weight:600;margin:6px 0 4px;">' + title + '</div>' +
+      '<ul style="margin:0 0 10px 18px;font-size:13px;color:var(--ink2);word-break:break-word;">' +
+      items.map(t => '<li>' + escHtml(t) + '</li>').join('') + '</ul>' : '';
+  return h + sec('差異', res.differences) + sec('選用建議', res.tips);
+}
+
+function openCompare() {
+  document.getElementById('compare-overlay').style.display = 'flex';
+  const i = document.getElementById('compare-input');
+  if (i) i.focus();
+}
+function closeCompare() {
+  document.getElementById('compare-overlay').style.display = 'none';
+}
+
+let _compareBusy = false;
+async function runCompare() {
+  if (_compareBusy) return;
+  const msg = document.getElementById('compare-msg');
+  const out = document.getElementById('compare-result');
+  const btn = document.getElementById('compare-run-btn');
+  const list = parseCompareInput(document.getElementById('compare-input').value);
+  const bad = validateCompareWords(list);
+  if (bad) { msg.textContent = bad; return; }
+  const apiKey = getApiKey();
+  if (!apiKey) { msg.textContent = '請先到匯入頁展開設定並儲存 Groq API Key'; return; }
+  _compareBusy = true;
+  btn.disabled = true;
+  btn.textContent = '分析中…';
+  msg.textContent = '';
+  out.innerHTML = '';
+  try {
+    const data = await compareGroqFetch({
+      model: GROQ_PRIMARY_MODEL,
+      temperature: 0.2,
+      max_tokens: 1800,
+      reasoning_effort: 'low',
+      response_format: { type: 'json_object' },
+      messages: buildComparePrompt(list)
+    }, apiKey);
+    const content = data && data.choices && data.choices[0] && data.choices[0].message
+      ? data.choices[0].message.content : '';
+    let res = parseCompareResult(content);
+    if (res && typeof s2tDeep === 'function') res = s2tDeep(res);
+    if (!res) { msg.textContent = '解析失敗，請再試一次'; }
+    else { out.innerHTML = renderCompareResult(res, loadWords()); }
+  } catch (e) {
+    msg.textContent = '比較失敗：' + (e && e.message ? e.message : '請稍後再試');
+  } finally {
+    _compareBusy = false;
+    btn.disabled = false;
+    btn.textContent = '比較';
+  }
 }
 
 function escJs(str) {
